@@ -1,103 +1,592 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Laboratório Arcade: HTML, CSS e JS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML/CSS/JS - Simulador Educacional</title>
+    
+    <!-- Importando as fontes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Paleta Retro/Pixel Art - Cores Suaves e Harmoniosas */
+            --bg-color: #F4F1EA;       /* Bege suave retrô */
+            --text-color: #3D3D3D;     /* Cinza chumbo (legibilidade) */
+            --primary-color: #6B9080;  /* Verde pastel */
+            --secondary-color: #A4C3B2; /* Verde claro */
+            --accent-color: #E07A5F;   /* Coral suave / avermelhado */
+            --highlight: #F6BD60;      /* Amarelo pastel */
+            --panel-bg: #2B2D42;       /* Azul marinho escuro (Painel) */
+            --panel-text: #EDF2F4;     /* Branco gelo */
+            
+            --font-title: 'Press Start 2P', cursive;
+            --font-text: 'VT323', monospace;
+            
+            /* Sombras Blocky (16-bit) */
+            --pixel-shadow: 4px 4px 0px rgba(0, 0, 0, 0.8);
+            --pixel-shadow-sm: 2px 2px 0px rgba(0, 0, 0, 0.8);
+            --pixel-border: 4px solid #3D3D3D;
+        }
+
+        /* Reset global para evitar problemas de layout */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+            font-family: sans-serif;
+        }
+
+        /* Container Principal */
+        #app-container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* ========================================================= */
+        /* ÁREA DE DEMONSTRAÇÃO - ESTILOS BASE (Nativos/Cru)         */
+        /* ========================================================= */
+        /* Estes estilos organizam o container, mas a estética real  */
+        /* só será aplicada quando a classe .css-enabled estiver     */
+        /* ativa. Sem ela, o HTML será exibido em seu formato cru.   */
+        #demo-container {
+            flex: 1;
+            height: 100%;
+            overflow-y: auto;
+            position: relative;
+            background-color: #FFFFFF;
+            transition: all 0.3s;
+        }
+
+        /* ========================================================= */
+        /* ESTILIZAÇÃO CSS ATIVADA (Tema Retro)                      */
+        /* ========================================================= */
+        #demo-container.css-enabled {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-text);
+            font-size: 1.2rem;
+            padding: 0;
+        }
+
+        #demo-container.css-enabled h1, 
+        #demo-container.css-enabled h2, 
+        #demo-container.css-enabled h3 {
+            font-family: var(--font-title);
+            text-transform: uppercase;
+            line-height: 1.4;
+        }
+
+        /* Cabeçalho */
+        #demo-container.css-enabled .demo-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 40px;
+            border-bottom: var(--pixel-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #demo-container.css-enabled .demo-header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            text-shadow: var(--pixel-shadow-sm);
+        }
+        #demo-container.css-enabled .demo-header nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+            font-family: var(--font-title);
+            font-size: 0.7rem;
+        }
+        #demo-container.css-enabled .demo-header nav a:hover {
+            color: var(--highlight);
+        }
+
+        /* Hero Section */
+        #demo-container.css-enabled .hero-section {
+            padding: 50px 40px;
+            text-align: center;
+            border-bottom: 2px dashed #3D3D3D;
+        }
+        #demo-container.css-enabled .hero-section h2 {
+            color: var(--accent-color);
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+        #demo-container.css-enabled .pixel-placeholder {
+            display: inline-block;
+            width: 300px;
+            height: 200px;
+            background-color: var(--secondary-color);
+            border: var(--pixel-border);
+            box-shadow: var(--pixel-shadow);
+            margin: 20px 0;
+            object-fit: cover; /* Caso seja uma imagem real */
+        }
+        #demo-container.css-enabled .cta-btn {
+            background-color: var(--highlight);
+            color: var(--text-color);
+            font-family: var(--font-title);
+            font-size: 1rem;
+            padding: 15px 30px;
+            border: var(--pixel-border);
+            box-shadow: var(--pixel-shadow);
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.1s;
+        }
+        #demo-container.css-enabled .cta-btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: none;
+        }
+
+        /* Painel Interativo */
+        #demo-container.css-enabled .interactive-panel {
+            padding: 40px;
+            background-color: #EAE6D9;
+        }
+        #demo-container.css-enabled .interactive-panel h3 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+        }
+        #demo-container.css-enabled .button-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        /* Estilos dos Botões Interativos */
+        #demo-container.css-enabled .btn-interact {
+            font-family: var(--font-title);
+            font-size: 0.7rem;
+            padding: 15px 20px;
+            border: var(--pixel-border);
+            background-color: white;
+            color: var(--text-color);
+            box-shadow: var(--pixel-shadow-sm);
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        /* Classes dinâmicas injetadas pelo JS */
+        #demo-container.css-enabled .btn-interact.color-shifted {
+            background-color: var(--accent-color) !important;
+            color: white !important;
+        }
+        #demo-container.css-enabled .btn-interact.scaled-up {
+            transform: scale(1.15);
+        }
+        #demo-container.css-enabled .btn-interact.shape-shifted {
+            border-radius: 20px; /* Quebra o estilo pixel, mostrando poder do CSS */
+            border-style: dotted;
+        }
+        #demo-container.css-enabled .btn-interact.shaking {
+            animation: shake 0.3s infinite;
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            25% { transform: translate(-1px, -2px) rotate(-1deg); }
+            50% { transform: translate(-3px, 0px) rotate(1deg); }
+            75% { transform: translate(2px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -1px) rotate(-1deg); }
+        }
+
+        /* Modal Pixelado */
+        #demo-container.css-enabled .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+        #demo-container.css-enabled .modal-box {
+            background-color: var(--bg-color);
+            border: var(--pixel-border);
+            box-shadow: var(--pixel-shadow);
+            padding: 30px;
+            max-width: 400px;
+            text-align: center;
+        }
+        #demo-container.css-enabled .modal-box p {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        /* ========================================================= */
+        /* PAINEL DE CONTROLE (ISOLADO - NUNCA PERDE O ESTILO)       */
+        /* ========================================================= */
+        #control-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 320px;
+            height: 100vh;
+            background-color: var(--panel-bg);
+            color: var(--panel-text);
+            box-shadow: -5px 0px 15px rgba(0,0,0,0.5);
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            border-left: 4px solid #1A1A24;
+            font-family: var(--font-title); /* Fonte exclusiva do painel */
+        }
+
+        #control-panel.collapsed {
+            right: -320px;
+        }
+
+        #toggle-panel-btn {
+            position: absolute;
+            left: -44px;
+            top: 20px;
+            width: 44px;
+            height: 50px;
+            background-color: var(--highlight);
+            border: 4px solid #1A1A24;
+            border-right: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            color: #1A1A24;
+            box-shadow: -4px 4px 0px rgba(0,0,0,0.3);
+        }
+
+        .panel-header {
+            padding: 30px 20px;
+            text-align: center;
+            background-color: #1A1A24;
+            border-bottom: 4px solid var(--accent-color);
+        }
+        .panel-header h2 {
+            font-size: 1rem;
+            margin: 0;
+            line-height: 1.4;
+            color: var(--highlight);
+        }
+
+        .panel-content {
+            padding: 30px 20px;
+            flex: 1;
+        }
+
+        .control-item {
+            margin-bottom: 30px;
+            background-color: #3B3E59;
+            padding: 15px;
+            border: 2px solid #1A1A24;
+            border-radius: 4px;
+        }
+
+        .control-item span {
+            display: block;
+            font-size: 0.7rem;
+            margin-bottom: 15px;
+            line-height: 1.5;
+            color: #A4C3B2;
+        }
+
+        /* Toggle Switches Visuais */
+        .switch-btn {
+            width: 100%;
+            padding: 12px;
+            font-family: var(--font-title);
+            font-size: 0.7rem;
+            border: 2px solid #1A1A24;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-align: center;
+        }
+
+        .switch-btn.on {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0px 4px 0px #406355;
+        }
+
+        .switch-btn.on:active { transform: translateY(4px); box-shadow: none; }
+
+        .switch-btn.off {
+            background-color: var(--accent-color);
+            color: white;
+            box-shadow: 0px 4px 0px #A0523C;
+        }
+
+        .switch-btn.off:active { transform: translateY(4px); box-shadow: none; }
+
+    </style>
 </head>
 <body>
 
-  <!-- ÁREA DE DEMONSTRAÇÃO -->
-  <div id="stage">
-    <div id="demo" data-theme="dark">
+    <div id="app-container">
+        
+        <!-- Área Esquerda: O Container do Simulador -->
+        <!-- Começa com CSS ativado (classe .css-enabled presente) -->
+        <main id="demo-container" class="css-enabled">
+            
+            <!-- O Wrapper do conteúdo. É ele que será removido quando o HTML for desativado -->
+            <div id="demo-content-wrapper">
+                
+                <header class="demo-header">
+                    <h1>RetroTech</h1>
+                    <nav>
+                        <a href="#">Início</a>
+                        <a href="#">Produtos</a>
+                        <a href="#">Contato</a>
+                    </nav>
+                </header>
 
-      <header class="topo">
-        <h1 class="logo">PIXELBOX 64</h1>
-        <nav class="menu" aria-label="Menu de teste">
-          <a href="#hero" class="menu-link ativo">Início</a>
-          <a href="#botoes" class="menu-link">Botões</a>
-          <a href="#contador" class="menu-link">Contador</a>
-        </nav>
-        <button id="btn-tema" class="btn" type="button">MODO CLARO</button>
-      </header>
+                <section class="hero-section">
+                    <h2>O Futuro é 16-bit!</h2>
+                    <p>Conheça o console que vai mudar a sua forma de jogar.</p>
+                    <!-- Placeholder de Imagem conforme solicitado -->
+                    <img src="LINK_DA_SUA_IMAGEM_AQUI" alt="Imagem do Produto" class="pixel-placeholder">
+                    <br>
+                    <button class="cta-btn">Comprar Agora</button>
+                </section>
 
-      <main>
-        <section id="hero" class="hero">
-          <div class="hero-texto">
-            <h2>JOGUE COMO EM 1986</h2>
-            <p>O console de bolso com cartuchos de verdade e 64 cores.</p>
-            <button class="btn btn-compra" type="button">COMPRAR POR R$ 299</button>
-          </div>
-          <div class="ph-frame">
-            <img class="produto-img" src="LINK_DA_SUA_IMAGEM_AQUI" alt="[ IMAGEM DO PRODUTO ]">
-          </div>
-        </section>
+                <section class="interactive-panel">
+                    <h3>Interações do Sistema</h3>
+                    <p style="text-align:center; margin-bottom: 20px;">Use os botões abaixo para ver o JavaScript em ação:</p>
+                    
+                    <div class="button-grid">
+                        <button id="btn-color" class="btn-interact">1. Mudar Cor</button>
+                        <button id="btn-scale" class="btn-interact">2. Escala (Aumentar)</button>
+                        <button id="btn-shape" class="btn-interact">3. Alterar Forma</button>
+                        <button id="btn-hover" class="btn-interact">4. Passe o Mouse</button>
+                        <button id="btn-modal" class="btn-interact">5. Abrir Alerta</button>
+                    </div>
+                </section>
 
-        <section id="botoes" class="bloco">
-          <h2>BOTÕES INTERATIVOS</h2>
-          <div class="grade-botoes">
-            <button id="b-cor" class="btn" type="button">1. MUDAR COR</button>
-            <button id="b-escala" class="btn" type="button">2. AUMENTAR</button>
-            <button id="b-forma" class="btn" type="button">3. MUDAR FORMA</button>
-            <button id="b-hover" class="btn" type="button">4. PASSE O MOUSE</button>
-            <button id="b-alerta" class="btn" type="button">5. ALERTA</button>
-          </div>
-        </section>
+                <!-- Modal Embutido (Usa atributo 'hidden' nativo do HTML para o estado cru) -->
+                <div id="product-modal" hidden>
+                    <div class="modal-overlay">
+                        <div class="modal-box">
+                            <p>🌟 Item Adicionado ao Inventário! 🌟</p>
+                            <button id="btn-close-modal" class="cta-btn">Fechar</button>
+                        </div>
+                    </div>
+                </div>
 
-        <section id="contador" class="bloco">
-          <h2>CONTADOR</h2>
-          <div class="contador">
-            <button id="c-menos" class="btn" type="button" aria-label="Diminuir">-</button>
-            <output id="c-valor" class="visor">0</output>
-            <button id="c-mais" class="btn" type="button" aria-label="Aumentar">+</button>
-            <button id="c-zero" class="btn" type="button">RESET</button>
-          </div>
-        </section>
-      </main>
+            </div> <!-- Fim Wrapper -->
+        </main>
 
-      <footer class="rodape">INSERT COIN © 1986 PIXELBOX</footer>
+        <!-- Área Direita: Painel Flutuante (Isolado e Imune) -->
+        <aside id="control-panel">
+            <button id="toggle-panel-btn" title="Minimizar/Expandir">▶</button>
+            
+            <div class="panel-header">
+                <h2>CONSOLE DE<br>DESENVOLVEDOR</h2>
+            </div>
 
-      <div id="popup" class="popup" hidden>
-        <div class="popup-caixa" role="alertdialog" aria-label="Alerta">
-          <p>PLAYER 1 PRONTO!</p>
-          <button id="popup-fechar" class="btn" type="button">OK</button>
-        </div>
-      </div>
+            <div class="panel-content">
+                
+                <div class="control-item">
+                    <span><strong>HTML (Estrutura)</strong><br>Adiciona ou remove o conteúdo DOM da página.</span>
+                    <button id="toggle-html" class="switch-btn on">LIGADO</button>
+                </div>
+
+                <div class="control-item">
+                    <span><strong>CSS (Estilos)</strong><br>Ativa ou desativa o visual e layout do projeto.</span>
+                    <button id="toggle-css" class="switch-btn on">LIGADO</button>
+                </div>
+
+                <div class="control-item">
+                    <span><strong>JavaScript (Ação)</strong><br>Ativa ou bloqueia as funcionalidades interativas.</span>
+                    <button id="toggle-js" class="switch-btn on">LIGADO</button>
+                </div>
+
+            </div>
+        </aside>
+
     </div>
 
-    <!-- Tela exibida quando o HTML está desligado -->
-    <div id="vazio" hidden>
-      <p>ERRO: DOM NÃO ENCONTRADO</p>
-      <p>Sem HTML, não há estrutura para mostrar.</p>
-    </div>
-  </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            /* ========================================================= */
+            /* VARIÁVEIS DE ESTADO DO SIMULADOR                          */
+            /* ========================================================= */
+            let isHtmlOn = true;
+            let isCssOn = true;
+            let isJsOn = true;
+            let isPanelOpen = true;
 
-  <!-- PAINEL DE CONTROLE (nunca é afetado pelos toggles) -->
-  <aside id="painel" class="aberto">
-    <button id="painel-aba" type="button" aria-label="Abrir ou fechar painel" aria-expanded="true">&#9658;</button>
-    <h2>CONTROLE</h2>
-    <p class="painel-dica">Desligue cada tecnologia e veja o que muda.</p>
+            /* ========================================================= */
+            /* REFERÊNCIAS DE ELEMENTOS (DOM)                            */
+            /* ========================================================= */
+            // Painel e Simulador
+            const panel = document.getElementById('control-panel');
+            const togglePanelBtn = document.getElementById('toggle-panel-btn');
+            const demoContainer = document.getElementById('demo-container');
+            
+            // Wrapper do conteúdo HTML da demonstração
+            const demoContentWrapper = document.getElementById('demo-content-wrapper');
 
-    <div class="linha">
-      <span>HTML</span>
-      <button class="toggle on" data-alvo="html" type="button" role="switch" aria-checked="true">LIGADO</button>
-    </div>
-    <div class="linha">
-      <span>CSS</span>
-      <button class="toggle on" data-alvo="css" type="button" role="switch" aria-checked="true">LIGADO</button>
-    </div>
-    <div class="linha">
-      <span>JS</span>
-      <button class="toggle on" data-alvo="js" type="button" role="switch" aria-checked="true">LIGADO</button>
-    </div>
+            // Botões do Painel
+            const btnToggleHtml = document.getElementById('toggle-html');
+            const btnToggleCss = document.getElementById('toggle-css');
+            const btnToggleJs = document.getElementById('toggle-js');
 
-    <p id="painel-status" class="painel-status">TUDO ATIVO</p>
-  </aside>
+            // Botões Interativos da Demo
+            const btnColor = document.getElementById('btn-color');
+            const btnScale = document.getElementById('btn-scale');
+            const btnShape = document.getElementById('btn-shape');
+            const btnHover = document.getElementById('btn-hover');
+            const btnModal = document.getElementById('btn-modal');
+            
+            // Modal
+            const modal = document.getElementById('product-modal');
+            const btnCloseModal = document.getElementById('btn-close-modal');
 
-  <script src="script.js"></script>
+            // Texto original do botão Hover
+            const originalHoverText = btnHover.textContent;
+
+            /* ========================================================= */
+            /* LÓGICA DO PAINEL DE CONTROLE (FLUTUANTE)                  */
+            /* ========================================================= */
+            
+            // 1. Expandir / Minimizar Painel
+            togglePanelBtn.addEventListener('click', () => {
+                isPanelOpen = !isPanelOpen;
+                if (isPanelOpen) {
+                    panel.classList.remove('collapsed');
+                    togglePanelBtn.textContent = '▶';
+                } else {
+                    panel.classList.add('collapsed');
+                    togglePanelBtn.textContent = '◀';
+                }
+            });
+
+            // Função Auxiliar para atualizar visual do botão Switch
+            function updateSwitchUI(buttonElement, state) {
+                if (state) {
+                    buttonElement.textContent = "LIGADO";
+                    buttonElement.classList.remove('off');
+                    buttonElement.classList.add('on');
+                } else {
+                    buttonElement.textContent = "DESLIGADO";
+                    buttonElement.classList.remove('on');
+                    buttonElement.classList.add('off');
+                }
+            }
+
+
+            // 2. Toggle HTML
+            btnToggleHtml.addEventListener('click', () => {
+                isHtmlOn = !isHtmlOn;
+                updateSwitchUI(btnToggleHtml, isHtmlOn);
+
+                if (isHtmlOn) {
+                    // Re-anexa o wrapper contendo todos os elementos originais.
+                    // Isso preserva os event listeners!
+                    demoContainer.appendChild(demoContentWrapper);
+                } else {
+                    // Remove completamente a estrutura do DOM do container
+                    demoContainer.removeChild(demoContentWrapper);
+                }
+            });
+
+            // 3. Toggle CSS
+            btnToggleCss.addEventListener('click', () => {
+                isCssOn = !isCssOn;
+                updateSwitchUI(btnToggleCss, isCssOn);
+
+                if (isCssOn) {
+                    // Adiciona a classe que aplica todos os estilos retro
+                    demoContainer.classList.add('css-enabled');
+                } else {
+                    // Remove a classe, revertendo ao HTML cru nativo do navegador
+                    demoContainer.classList.remove('css-enabled');
+                }
+            });
+
+            // 4. Toggle JavaScript
+            btnToggleJs.addEventListener('click', () => {
+                isJsOn = !isJsOn;
+                updateSwitchUI(btnToggleJs, isJsOn);
+                // A flag 'isJsOn' será verificada dentro dos eventos da demo
+            });
+
+            /* ========================================================= */
+            /* LÓGICA DA ÁREA DE DEMONSTRAÇÃO                            */
+            /* ========================================================= */
+
+            // Função de segurança para verificar se o JS da demo está ativo
+            function canExecuteAction() {
+                if (!isJsOn) {
+                    console.log("Ação bloqueada: JavaScript está desativado no painel.");
+                    return false;
+                }
+                return true;
+            }
+
+            // Botão 1: Mudar Cor
+            btnColor.addEventListener('click', () => {
+                if (!canExecuteAction()) return;
+                btnColor.classList.toggle('color-shifted');
+            });
+
+            // Botão 2: Escala
+            btnScale.addEventListener('click', () => {
+                if (!canExecuteAction()) return;
+                btnScale.classList.toggle('scaled-up');
+            });
+
+            // Botão 3: Mudar Forma (Borda)
+            btnShape.addEventListener('click', () => {
+                if (!canExecuteAction()) return;
+                btnShape.classList.toggle('shape-shifted');
+            });
+
+            // Botão 4: Hover Dinâmico (Entrar)
+            btnHover.addEventListener('mouseenter', () => {
+                if (!canExecuteAction()) return;
+                btnHover.textContent = "ME CLIQUE!";
+                btnHover.classList.add('shaking');
+            });
+
+            // Botão 4: Hover Dinâmico (Sair)
+            btnHover.addEventListener('mouseleave', () => {
+                // Remove o efeito hover mesmo se o JS for desativado no meio do processo
+                // para evitar que fique travado tremendo.
+                btnHover.textContent = originalHoverText;
+                btnHover.classList.remove('shaking');
+            });
+
+            // Botão 5: Abrir Modal
+            btnModal.addEventListener('click', () => {
+                if (!canExecuteAction()) return;
+                // Remove o atributo hidden para mostrar o modal
+                modal.removeAttribute('hidden');
+            });
+
+            // Fechar Modal
+            btnCloseModal.addEventListener('click', () => {
+                if (!canExecuteAction()) {
+                    // Permite fechar forçadamente mesmo se o JS foi desligado
+                    // para garantir usabilidade.
+                }
+                modal.setAttribute('hidden', 'true');
+            });
+
+        });
+    </script>
 </body>
 </html>
