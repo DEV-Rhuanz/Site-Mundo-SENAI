@@ -3,15 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RETRO-X 9000 - Laboratório Interativo Web (HTML, CSS, JS)</title>
+    <title>Retro Dev Simulator</title>
     
-    <!-- Google Fonts: 'Press Start 2P' for authentic 8-bit retro gaming typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Fonte Retro em Pixel Art -->
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    
-    <!-- CONTROL PANEL STYLESHEET (PERMANENTLY ACTIVE) -->
-    <style id="control-panel-css">
+
+    <!-- 
+      ========================================================
+      ARQUIVO VIRTUAL: style-core.css
+      (Estilos do Painel de Controle e Layout Base - NUNCA DESATIVADOS)
+      ========================================================
+    -->
+    <style id="core-styles">
+        :root {
+            --panel-bg: #222;
+            --panel-border: #fff;
+            --neon-green: #39ff14;
+            --neon-red: #ff073a;
+        }
+
         * {
             box-sizing: border-box;
         }
@@ -19,985 +29,687 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #0a0a16;
-            font-family: 'Press Start 2P', monospace, sans-serif;
-            color: #ffffff;
-            overflow-x: hidden;
-            min-height: 100vh;
-        }
-
-        /* Floating Retractable Control Panel Wrapper */
-        #control-panel-wrapper {
-            position: fixed;
-            top: 20px;
-            right: 0;
-            z-index: 99999;
             display: flex;
-            align-items: flex-start;
-            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            height: 100vh;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fonte base caso tudo falhe */
         }
 
-        #control-panel-wrapper.collapsed {
-            transform: translateX(calc(100% - 44px));
+        /* Container que divide a tela */
+        #app-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
         }
 
-        /* Toggle Handle Button on Panel Edge */
-        #panel-toggle-btn {
-            background: #ff0055;
-            color: #ffffff;
-            border: 4px solid #000000;
-            border-right: none;
-            padding: 14px 10px;
-            cursor: pointer;
+        /* Wrapper da área de demonstração (ocupa o resto da tela) */
+        #demo-wrapper {
+            flex-grow: 1;
+            height: 100%;
+            overflow-y: auto;
+            position: relative;
+            background-color: #ffffff; /* Fundo branco padrao do navegador para modo sem CSS */
+        }
+
+        /* Tela de erro quando o HTML é desativado */
+        #no-html-screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            color: #39ff14;
+            font-family: 'Courier New', Courier, monospace;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* PAINEL DE CONTROLE (Sidebar) */
+        #control-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 320px;
+            height: 100%;
+            background-color: var(--panel-bg);
+            border-left: 6px solid var(--panel-border);
+            box-shadow: -8px 0 0px #555;
+            z-index: 1000;
+            transition: transform 0.4s ease-in-out;
+            display: flex;
+            flex-direction: column;
             font-family: 'Press Start 2P', monospace;
-            font-size: 14px;
-            box-shadow: -4px 4px 0px #000000;
-            outline: none;
+            color: white;
+            font-size: 12px;
+        }
+
+        #control-panel.collapsed {
+            transform: translateX(320px);
+        }
+
+        /* Botão de abrir/fechar o painel */
+        #toggle-panel-btn {
+            position: absolute;
+            left: -48px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 48px;
+            height: 60px;
+            background-color: var(--panel-bg);
+            border: 6px solid var(--panel-border);
+            border-right: none;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            user-select: none;
-        }
-
-        #panel-toggle-btn:hover {
-            background: #ff3377;
-            color: #ffe600;
-        }
-
-        /* Main Control Panel Box */
-        #control-panel {
-            width: 330px;
-            background: #14142b;
-            border: 4px solid #00f0ff;
-            box-shadow: -8px 8px 0px #000000;
-            padding: 18px;
-            color: #ffffff;
+            color: white;
             font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            box-shadow: -4px 4px 0 #555;
+            transition: background 0.2s;
         }
 
-        .panel-header {
-            border-bottom: 3px dashed #00f0ff;
-            padding-bottom: 12px;
-            margin-bottom: 16px;
+        #toggle-panel-btn:hover {
+            background-color: #444;
+        }
+
+        .panel-content {
+            padding: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
         }
 
         .panel-title {
-            font-size: 11px;
-            color: #ffe600;
-            margin: 0 0 6px 0;
+            text-align: center;
+            font-size: 14px;
             line-height: 1.5;
-            text-shadow: 2px 2px 0px #ff0055;
+            margin-bottom: 30px;
+            color: #f0f;
+            text-shadow: 2px 2px 0 #fff;
         }
 
-        .panel-subtitle {
-            font-size: 8px;
-            color: #00f0ff;
-            margin: 0;
-            line-height: 1.4;
+        /* Estilo dos Toggles */
+        .toggle-container {
+            margin-bottom: 30px;
+            background: #111;
+            padding: 15px;
+            border: 4px solid #fff;
         }
 
-        /* Switch Container Cards */
-        .switch-card {
-            background: #0d0221;
-            border: 3px solid #332255;
-            padding: 12px;
-            margin-bottom: 14px;
-            box-shadow: 3px 3px 0px #000000;
-        }
-
-        .switch-header-row {
+        .toggle-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 15px;
         }
 
-        .switch-title {
+        .toggle-title {
+            font-size: 14px;
+            color: #0ff;
+        }
+
+        .toggle-status {
             font-size: 10px;
-            color: #ffffff;
+            padding: 4px 8px;
+            background: var(--neon-green);
+            color: #000;
+            border: 2px solid #fff;
         }
 
-        .switch-title.html-tag { color: #ff5500; }
-        .switch-title.css-tag { color: #00f0ff; }
-        .switch-title.js-tag { color: #ffe600; }
-
-        /* Pixel Toggle Switch Button */
-        .pixel-toggle-switch {
-            border: 3px solid #000000;
-            padding: 6px 10px;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 8px;
-            cursor: pointer;
-            text-transform: uppercase;
-            font-weight: bold;
-            box-shadow: 2px 2px 0px #000000;
-            outline: none;
-            transition: background-color 0.15s ease;
+        .toggle-status.off {
+            background: var(--neon-red);
+            color: #fff;
         }
 
-        .pixel-toggle-switch.is-on {
-            background: #00ff66;
-            color: #000000;
-        }
-
-        .pixel-toggle-switch.is-off {
-            background: #ff2a2a;
-            color: #ffffff;
-        }
-
-        .switch-explanation {
-            font-size: 7px;
-            color: #a0a0c0;
-            line-height: 1.5;
-            margin: 0;
-        }
-
-        .js-status-badge {
-            font-size: 7px;
-            margin-top: 6px;
-            color: #00ff66;
-        }
-
-        .panel-reset-btn {
+        /* O Switch Visual */
+        .switch-btn {
             width: 100%;
-            background: #ffe600;
-            color: #000000;
-            border: 3px solid #000000;
-            padding: 12px;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 9px;
+            padding: 10px;
+            background: #333;
+            border: 4px solid #555;
+            color: white;
+            font-family: inherit;
             cursor: pointer;
-            box-shadow: 4px 4px 0px #000000;
             text-transform: uppercase;
-            transition: all 0.1s ease;
+            box-shadow: 4px 4px 0 #000;
+            transition: all 0.1s;
         }
 
-        .panel-reset-btn:hover {
-            background: #ffff33;
-            transform: translate(-1px, -1px);
-            box-shadow: 5px 5px 0px #000000;
+        .switch-btn:active {
+            box-shadow: 0 0 0 #000;
+            transform: translate(4px, 4px);
         }
 
-        /* Message Overlay when HTML DOM is Toggled OFF */
-        #demo-html-off-msg {
+        .desc-text {
+            margin-top: 10px;
+            font-size: 9px;
+            line-height: 1.4;
+            color: #aaa;
+        }
+        
+        /* Modal Popup isolado no Core para funcionar sempre que chamado */
+        #custom-popup {
             display: none;
-            max-width: 900px;
-            margin: 60px auto;
-            padding: 50px 20px;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .popup-content {
+            background: #000;
+            border: 6px solid #f0f;
+            box-shadow: 8px 8px 0 #0ff;
+            padding: 30px;
             text-align: center;
-            background: #0d0221;
-            border: 4px dashed #ff0055;
-            color: #ff0055;
-            font-size: 11px;
-            line-height: 2;
-            box-shadow: 6px 6px 0px #000000;
+            font-family: 'Press Start 2P', monospace;
+            color: white;
+        }
+        .popup-btn {
+            margin-top: 20px;
+            background: #f0f;
+            color: white;
+            border: 4px solid #fff;
+            padding: 10px 20px;
+            font-family: inherit;
+            cursor: pointer;
         }
     </style>
 
-    <!-- DEMO AREA STYLESHEET (CAN BE TOGGLED OFF VIA CONTROL PANEL) -->
-    <style id="demo-css">
-        #demo-wrapper {
-            width: 100%;
-            max-width: 1100px;
+    <!-- 
+      ========================================================
+      ARQUIVO VIRTUAL: style-demo.css
+      (CSS EXCLUSIVO DA ÁREA DE DEMONSTRAÇÃO - Pode ser desativado)
+      ========================================================
+    -->
+    <style id="demo-styles">
+        #demo-content {
+            --bg-color: #2b2b40;
+            --text-color: #ffffff;
+            --primary: #ff00ff; /* Magenta */
+            --secondary: #00ffff; /* Cyan */
+            --accent: #ffff00; /* Yellow */
+            --border-width: 4px;
+            
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Press Start 2P', monospace;
+            min-height: 100%;
+            padding-bottom: 50px;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* Dark / Light Mode */
+        #demo-content.light-mode {
+            --bg-color: #e0e0e0;
+            --text-color: #111111;
+            --primary: #d900d9;
+            --secondary: #00cccc;
+            --accent: #cccc00;
+        }
+
+        .demo-container {
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
         }
 
-        /* Theme Modes for Demo Area */
-        #demo-app.dark-theme {
-            background-color: #0d0221;
-            color: #ffffff;
-            border: 4px solid #00f0ff;
-            box-shadow: 8px 8px 0px #ff0055;
-        }
-
-        #demo-app.light-theme {
-            background-color: #e6ecf2;
-            color: #0d0221;
-            border: 4px solid #0d0221;
-            box-shadow: 8px 8px 0px #00f0ff;
-        }
-
-        #demo-app {
-            padding: 28px;
-            margin-bottom: 40px;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        /* Demo Header Section */
         .demo-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 4px solid currentColor;
-            padding-bottom: 18px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 14px;
+            border-bottom: var(--border-width) solid var(--primary);
+            padding-bottom: 20px;
+            margin-bottom: 40px;
         }
 
-        .demo-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .demo-logo-icon {
-            width: 24px;
-            height: 24px;
-            background: #ff0055;
-            box-shadow: 2px 2px 0px currentColor;
-        }
-
-        .demo-title {
-            font-size: 16px;
+        .demo-header h1 {
+            font-size: 24px;
+            text-shadow: 3px 3px 0px var(--secondary);
             margin: 0;
-            color: #00f0ff;
-            text-shadow: 3px 3px 0px #ff0055;
         }
 
-        #demo-app.light-theme .demo-title {
-            color: #ff0055;
-            text-shadow: 3px 3px 0px #0d0221;
-        }
-
-        .theme-btn {
-            background: #ffe600;
-            color: #000000;
-            border: 3px solid #000000;
-            padding: 10px 14px;
+        .btn-retro {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: var(--border-width) solid var(--text-color);
+            box-shadow: 4px 4px 0px var(--primary);
+            padding: 10px 15px;
             font-family: 'Press Start 2P', monospace;
-            font-size: 9px;
+            font-size: 12px;
             cursor: pointer;
-            box-shadow: 3px 3px 0px #000000;
+            text-transform: uppercase;
+            transition: transform 0.1s, box-shadow 0.1s;
         }
 
-        .theme-btn:hover {
-            transform: translate(-1px, -1px);
-            box-shadow: 4px 4px 0px #000000;
+        .btn-retro:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0px 0px 0px var(--primary);
         }
 
-        /* Demo Navigation Bar */
-        .demo-nav {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 30px;
-            border-bottom: 2px dashed currentColor;
-            padding-bottom: 14px;
-            flex-wrap: wrap;
-        }
-
-        .demo-nav-link {
-            color: inherit;
-            text-decoration: none;
-            font-size: 9px;
-            padding: 6px 10px;
-            border: 2px solid transparent;
-        }
-
-        .demo-nav-link:hover {
-            border-color: #00f0ff;
-            background: rgba(0, 240, 255, 0.15);
-        }
-
-        /* Hero Showcase Section */
         .hero-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 28px;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.25);
-            padding: 24px;
-            border: 3px solid currentColor;
-            margin-bottom: 40px;
-        }
-
-        @media (max-width: 768px) {
-            .hero-section {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .hero-content h1 {
-            font-size: 13px;
-            line-height: 1.7;
-            color: #ffe600;
-            margin-top: 0;
-            margin-bottom: 14px;
-        }
-
-        #demo-app.light-theme .hero-content h1 {
-            color: #0088cc;
-        }
-
-        .hero-content p {
-            font-size: 8px;
-            line-height: 1.9;
-            margin-bottom: 22px;
-            opacity: 0.9;
-        }
-
-        .hero-buy-btn {
-            background: #00ff66;
-            color: #000000;
-            border: 4px solid #000000;
-            padding: 14px 20px;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 10px;
-            cursor: pointer;
-            box-shadow: 4px 4px 0px #000000;
-        }
-
-        .hero-buy-btn:hover {
-            background: #33ff88;
-            transform: translate(-1px, -1px);
-            box-shadow: 5px 5px 0px #000000;
-        }
-
-        /* Hero Product Image Placeholder */
-        .hero-img-container {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
-
-        .hero-img-placeholder {
-            width: 100%;
-            max-width: 380px;
-            height: 220px;
-            object-fit: cover;
-            border: 4px solid #00f0ff;
-            box-shadow: 6px 6px 0px #000000;
-            background: #1a0b2e url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="380" height="220" viewBox="0 0 380 220"><rect width="380" height="220" fill="%230d0221"/><rect x="15" y="15" width="350" height="190" fill="%231a0b2e" stroke="%2300f0ff" stroke-width="4"/><text x="50%25" y="45%25" dominant-baseline="middle" text-anchor="middle" fill="%23ffe600" font-family="monospace" font-size="18" font-weight="bold">RETRO-X 9000</text><text x="50%25" y="65%25" dominant-baseline="middle" text-anchor="middle" fill="%2300f0ff" font-family="monospace" font-size="11">★ 16-BIT CONSOLE ★</text></svg>') center/cover no-repeat;
-            display: block;
-        }
-
-        /* Section Titles */
-        .section-title {
-            font-size: 11px;
-            color: #ff0055;
-            margin-bottom: 20px;
-            border-left: 5px solid #ffe600;
-            padding-left: 12px;
-            line-height: 1.4;
-        }
-
-        /* Interactive Buttons Grid */
-        .interactive-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-            margin-bottom: 40px;
-        }
-
-        .demo-action-btn {
-            background: #1f1f3d;
-            color: #ffffff;
-            border: 3px solid #000000;
-            padding: 16px 10px;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 8px;
-            line-height: 1.5;
-            cursor: pointer;
-            box-shadow: 4px 4px 0px #000000;
-            transition: transform 0.15s ease, background-color 0.2s ease, border-radius 0.2s ease;
-            text-align: center;
-            min-height: 85px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
-            outline: none;
-        }
-
-        .btn-status-tag {
-            font-size: 7px;
-            opacity: 0.85;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 3px 6px;
-            color: #ffffff;
-        }
-
-        /* Dynamic Classes triggered via JavaScript */
-        .btn-color-1 { background: #ff0055 !important; color: #ffffff !important; }
-        .btn-color-2 { background: #00f0ff !important; color: #000000 !important; }
-        .btn-color-3 { background: #00ff66 !important; color: #000000 !important; }
-        .btn-color-4 { background: #ffe600 !important; color: #000000 !important; }
-
-        .btn-scale-1 { transform: scale(1); }
-        .btn-scale-2 { transform: scale(1.12); z-index: 2; }
-        .btn-scale-3 { transform: scale(1.24); z-index: 2; }
-
-        .btn-shape-1 { border-radius: 0px; clip-path: none; }
-        .btn-shape-2 { clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px); }
-        .btn-shape-3 { border-radius: 20px; }
-
-        /* Pixel Shake Animation */
-        @keyframes pixel-shake {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            20% { transform: translate(-6px, 4px) rotate(-2deg); }
-            40% { transform: translate(6px, -4px) rotate(2deg); }
-            60% { transform: translate(-4px, -2px) rotate(-1deg); }
-            80% { transform: translate(4px, 2px) rotate(1deg); }
-            100% { transform: translate(0, 0) rotate(0deg); }
-        }
-
-        .shake-anim {
-            animation: pixel-shake 0.4s ease-in-out;
-        }
-
-        .btn-shake-hover:hover {
-            background: #ff0055;
-            color: #ffffff;
-        }
-
-        /* Counter Section */
-        .counter-section {
-            background: rgba(0, 0, 0, 0.3);
-            border: 3px solid currentColor;
-            padding: 24px;
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 60px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            border: var(--border-width) solid var(--secondary);
+            box-shadow: 8px 8px 0px var(--primary);
+        }
+
+        .hero-title {
+            font-size: 20px;
+            color: var(--accent);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        /* Estilo do Placeholder (Substitui imagem pesada) */
+        .img-placeholder {
+            width: 250px;
+            height: 250px;
+            background-color: #444;
+            border: var(--border-width) dashed var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            color: #888;
+            font-size: 10px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .btn-buy {
+            background-color: var(--primary);
+            color: #fff;
+            font-size: 16px;
+            padding: 15px 30px;
+            border-color: #fff;
+            box-shadow: 6px 6px 0px var(--secondary);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .section-title {
+            font-size: 16px;
+            border-bottom: 2px dashed var(--text-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .grid-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        .action-btn {
+            padding: 20px 10px;
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        /* Animação Hover no Botão 4 */
+        .btn-hover-shake:hover {
+            animation: shake 0.5s;
+            background-color: var(--accent);
+            color: #000;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        .interactive-section {
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border: var(--border-width) solid var(--text-color);
+            text-align: center;
         }
 
         .counter-display {
-            font-size: 26px;
-            color: #00ff66;
-            background: #000000;
-            border: 4px solid #333333;
-            padding: 18px;
-            margin: 18px 0;
-            letter-spacing: 4px;
-            box-shadow: inset 0 0 12px rgba(0, 255, 102, 0.3);
+            font-size: 40px;
+            margin: 20px 0;
+            color: var(--secondary);
+            text-shadow: 4px 4px 0px #000;
         }
 
         .counter-controls {
             display: flex;
             justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
+            gap: 15px;
         }
 
-        .counter-btn {
-            background: #00f0ff;
-            color: #000000;
-            border: 3px solid #000000;
-            padding: 12px 18px;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 10px;
-            cursor: pointer;
-            box-shadow: 3px 3px 0px #000000;
-        }
-
-        .counter-btn:hover {
-            background: #33f3ff;
-        }
-
-        .counter-btn.reset-btn {
-            background: #ff0055;
-            color: #ffffff;
-        }
-
-        .counter-btn.reset-btn:hover {
-            background: #ff3377;
-        }
-
-        /* Educational Cards Section */
-        .edu-cards-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 18px;
-            margin-top: 20px;
-        }
-
-        .edu-card {
-            background: rgba(255, 255, 255, 0.04);
-            border: 2px dashed currentColor;
-            padding: 18px;
-        }
-
-        .edu-card h3 {
-            font-size: 10px;
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-
-        .edu-card.html-card h3 { color: #ff5500; }
-        .edu-card.css-card h3 { color: #00f0ff; }
-        .edu-card.js-card h3 { color: #ffe600; }
-
-        .edu-card p {
-            font-size: 8px;
-            line-height: 1.8;
-            margin: 0;
-            opacity: 0.85;
-        }
-
-        /* Retro Pixel Modal Alert */
-        .pixel-modal-backdrop {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 99998;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .pixel-modal-backdrop.active {
-            display: flex;
-        }
-
-        .pixel-modal-content {
-            background: #14142b;
-            border: 4px solid #ffe600;
-            box-shadow: 8px 8px 0px #ff0055;
-            padding: 28px;
-            max-width: 440px;
-            width: 100%;
-            text-align: center;
-            color: #ffffff;
-        }
-
-        .pixel-modal-title {
-            color: #ffe600;
-            font-size: 12px;
-            margin-top: 0;
-            margin-bottom: 16px;
-            line-height: 1.5;
-        }
-
-        .pixel-modal-body {
-            font-size: 9px;
-            line-height: 1.9;
-            margin-bottom: 24px;
-            color: #00f0ff;
-        }
-
-        .pixel-modal-close-btn {
-            background: #ff0055;
-            color: #ffffff;
-            border: 3px solid #000000;
-            padding: 12px 22px;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 9px;
-            cursor: pointer;
-            box-shadow: 4px 4px 0px #000000;
-        }
-
-        .pixel-modal-close-btn:hover {
-            background: #ff3377;
+        .counter-controls button {
+            font-size: 16px;
+            padding: 10px 20px;
         }
     </style>
 </head>
 <body>
 
-    <!-- FLOATING RIGHT-SIDE CONTROL PANEL (ALWAYS FULLY STYLED & FUNCTIONAL) -->
-    <div id="control-panel-wrapper">
-        <button id="panel-toggle-btn" title="Expandir/Recolher Painel">◀</button>
-        <div id="control-panel">
-            <div class="panel-header">
-                <h2 class="panel-title">PAINEL DE CONTROLE</h2>
-                <p class="panel-subtitle">Laboratório de Web Frontend</p>
-            </div>
-
-            <!-- HTML TOGGLE SWITCH -->
-            <div class="switch-card">
-                <div class="switch-header-row">
-                    <span class="switch-title html-tag">1. HTML</span>
-                    <button id="switch-html" class="pixel-toggle-switch is-on">LIGADO</button>
-                </div>
-                <p class="switch-explanation">A Estrutura (DOM). Se desativado, remove o esqueleto HTML da demonstração.</p>
-            </div>
-
-            <!-- CSS TOGGLE SWITCH -->
-            <div class="switch-card">
-                <div class="switch-header-row">
-                    <span class="switch-title css-tag">2. CSS</span>
-                    <button id="switch-css" class="pixel-toggle-switch is-on">LIGADO</button>
-                </div>
-                <p class="switch-explanation">O Estilo Visual. Se desativado, remove todas as cores, fontes e layouts da demonstração.</p>
-            </div>
-
-            <!-- JS TOGGLE SWITCH -->
-            <div class="switch-card">
-                <div class="switch-header-row">
-                    <span class="switch-title js-tag">3. JAVASCRIPT</span>
-                    <button id="switch-js" class="pixel-toggle-switch is-on">LIGADO</button>
-                </div>
-                <p class="switch-explanation">A Interatividade. Se desativado, bloqueia as ações de clique na área de demonstração.</p>
-                <div id="js-status-badge" class="js-status-badge">STATUS: JS ATIVO</div>
-            </div>
-
-            <button id="reset-panel-btn" class="panel-reset-btn">🔄 RESTAURAR TUDO</button>
-        </div>
-    </div>
-
-    <!-- MESSAGE DISPLAYED WHEN HTML IS TOGGLED OFF -->
-    <div id="demo-html-off-msg">
-        ⚠️ [ESTRUTURA DOM DESATIVADA]<br><br>
-        O HTML foi desativado pelo Painel de Controle.<br>
-        Sem a marcação HTML, o navegador não possui elementos para renderizar na tela!
-    </div>
-
-    <!-- DEMO AREA CONTAINER -->
-    <div id="demo-wrapper">
-        <div id="demo-app" class="dark-theme">
+    <!-- 
+      ========================================================
+      ARQUIVO VIRTUAL: index.html (Estrutura DOM)
+      ========================================================
+    -->
+    <div id="app-container">
+        
+        <!-- ÁREA DE DEMONSTRAÇÃO (Esquerda) -->
+        <main id="demo-wrapper">
             
-            <!-- HEADER -->
-            <header class="demo-header">
-                <div class="demo-brand">
-                    <div class="demo-logo-icon"></div>
-                    <h1 class="demo-title">RETRO-X 9000</h1>
-                </div>
-                <button id="theme-toggle-btn" class="theme-btn">MODO CLARO ☀️</button>
-            </header>
+            <!-- Tela exibida apenas quando o HTML é "desativado" -->
+            <div id="no-html-screen">
+                <h2>FATAL ERROR 404</h2>
+                <p>DOM (Document Object Model) não encontrado.</p>
+                <p>O HTML foi desativado.</p>
+            </div>
 
-            <!-- NAVIGATION LINKS -->
-            <nav class="demo-nav">
-                <a href="#inicio" class="demo-nav-link" onclick="return false;">[ INÍCIO ]</a>
-                <a href="#specs" class="demo-nav-link" onclick="return false;">[ ESPECIFICAÇÕES ]</a>
-                <a href="#jogos" class="demo-nav-link" onclick="return false;">[ JOGOS ]</a>
-                <a href="#comprar" class="demo-nav-link" onclick="return false;">[ COMPRAR ]</a>
-            </nav>
-
-            <!-- HERO SECTION -->
-            <section class="hero-section">
-                <div class="hero-content">
-                    <h1>O CONSOLE 16-BIT DEFINITIVO</h1>
-                    <p>Reviva a era de ouro dos arcades! Processador Pixel-Core 9000, som chiptune estéreo e compatibilidade total com cartuchos clássicos.</p>
-                    <button id="hero-buy-btn" class="hero-buy-btn">COMPRAR - R$ 999</button>
-                </div>
-                <div class="hero-img-container">
-                    <img class="hero-img-placeholder" src="LINK_DA_SUA_IMAGEM_AQUI" alt="RETRO-X 9000 Console" onerror="this.onerror=null;">
-                </div>
-            </section>
-
-            <!-- INTERACTIVE BUTTONS SECTION -->
-            <section class="interactive-section">
-                <h2 class="section-title">PAINEL DE TESTE DE BOTÕES (CSS & JS)</h2>
-                <div class="interactive-grid">
+            <!-- Conteúdo Real da Demo -->
+            <div id="demo-content">
+                <div class="demo-container">
                     
-                    <!-- BUTTON 1: COLOR CHANGER -->
-                    <button id="btn-color" class="demo-action-btn">
-                        <span>1. MUDA COR</span>
-                        <span id="btn-color-tag" class="btn-status-tag">COR: PADRÃO</span>
-                    </button>
+                    <!-- Cabeçalho -->
+                    <header class="demo-header">
+                        <h1>PIXEL CONSOLE</h1>
+                        <button class="btn-retro" id="btn-theme">Mudar Tema</button>
+                    </header>
 
-                    <!-- BUTTON 2: SCALE UP -->
-                    <button id="btn-scale" class="demo-action-btn btn-scale-1">
-                        <span>2. AUMENTA TAMANHO</span>
-                        <span id="btn-scale-tag" class="btn-status-tag">ESCALA: 1.0x</span>
-                    </button>
+                    <!-- Hero Section -->
+                    <section class="hero-section">
+                        <h2 class="hero-title">O FUTURO DO RETRÔ CHEGOU!</h2>
+                        
+                        <!-- Placeholder CSS imitando Imagem -->
+                        <div class="img-placeholder">
+                            &lt;img src="produto.jpg" alt="Console Retrô" /&gt;<br><br>
+                            [IMAGEM 250x250]
+                        </div>
 
-                    <!-- BUTTON 3: SHAPE SHIFTER -->
-                    <button id="btn-shape" class="demo-action-btn btn-shape-1">
-                        <span>3. ALTERA FORMA</span>
-                        <span id="btn-shape-tag" class="btn-status-tag">FORMA: RETÂNGULO</span>
-                    </button>
+                        <p style="margin-bottom: 20px; font-size: 12px; line-height: 1.8;">
+                            Experimente o poder dos 8-bits no seu navegador. <br>
+                            Garanta já o seu exemplar de edição limitada!
+                        </p>
+                        <button class="btn-retro btn-buy" id="btn-buy">COMPRAR AGORA</button>
+                    </section>
 
-                    <!-- BUTTON 4: HOVER & SHAKE -->
-                    <button id="btn-shake" class="demo-action-btn btn-shake-hover">
-                        <span>4. TREMER & HOVER</span>
-                        <span class="btn-status-tag">PASSE O MOUSE / CLIQUE</span>
-                    </button>
-
-                    <!-- BUTTON 5: POPUP ALERT -->
-                    <button id="btn-modal" class="demo-action-btn">
-                        <span>5. ALERTA RETRO</span>
-                        <span class="btn-status-tag">ABRIR MODAL</span>
-                    </button>
-
-                </div>
-            </section>
-
-            <!-- INTERACTIVE COUNTER SECTION -->
-            <section class="counter-section">
-                <h2 class="section-title">CONTADOR NUMÉRICO DIGITAL</h2>
-                <div id="counter-display" class="counter-display">SCORE: 0000</div>
-                <div class="counter-controls">
-                    <button id="counter-inc" class="counter-btn">+ INCREMENTAR (+1)</button>
-                    <button id="counter-dec" class="counter-btn">- DECREMENTAR (-1)</button>
-                    <button id="counter-reset" class="counter-btn reset-btn">RESET (0)</button>
-                </div>
-            </section>
-
-            <!-- EDUCATIONAL CONCEPTS EXPLANATION CARDS -->
-            <section class="edu-section">
-                <h2 class="section-title">COMO AS TECNOLOGIAS TRABALHAM JUNTAS</h2>
-                <div class="edu-cards-grid">
-                    <div class="edu-card html-card">
-                        <h3>🟧 HTML5 (Estrutura)</h3>
-                        <p>Cria os elementos, textos, botões, cabeçalho e caixa do contador na página.</p>
+                    <!-- Seção de Botões de Teste JS/CSS -->
+                    <h2 class="section-title">TESTE DE INTERAÇÕES:</h2>
+                    <div class="grid-buttons">
+                        <button class="btn-retro action-btn" id="btn-color">1. Mudar Cor</button>
+                        <button class="btn-retro action-btn" id="btn-scale">2. Aumentar Tamanho</button>
+                        <button class="btn-retro action-btn" id="btn-shape">3. Mudar Forma</button>
+                        <button class="btn-retro action-btn btn-hover-shake" id="btn-hover">4. Passe o Mouse!</button>
+                        <button class="btn-retro action-btn" id="btn-alert">5. Disparar Popup</button>
                     </div>
-                    <div class="edu-card css-card">
-                        <h3>🟦 CSS3 (Estilo)</h3>
-                        <p>Aplica a fonte pixelada, cores neon, sombras retas em bloco, animações e responsividade.</p>
-                    </div>
-                    <div class="edu-card js-card">
-                        <h3>🟨 JavaScript (Lógica)</h3>
-                        <p>Responde aos cliques do usuário, altera estados, atualiza o contador e alterna o modo escuro.</p>
-                    </div>
+
+                    <!-- Seção de Contador (Estado JS) -->
+                    <h2 class="section-title">MÁQUINA DE ESTADOS (Contador):</h2>
+                    <section class="interactive-section">
+                        <div class="counter-display" id="counter-value">0</div>
+                        <div class="counter-controls">
+                            <button class="btn-retro" id="btn-decrement">-</button>
+                            <button class="btn-retro" id="btn-reset">ZERO</button>
+                            <button class="btn-retro" id="btn-increment">+</button>
+                        </div>
+                    </section>
                 </div>
-            </section>
+            </div>
+        </main>
 
-        </div>
-    </div>
-
-    <!-- RETRO PIXEL ART ALERT MODAL -->
-    <div id="pixel-modal" class="pixel-modal-backdrop">
-        <div class="pixel-modal-content">
-            <h3 class="pixel-modal-title">★ ALERTA RETRO-X 9000 ★</h3>
-            <p class="pixel-modal-body">PARABÉNS! O CONSOLE RETRO-X 9000 FOI ADICIONADO AO SEU CARRINHO COM SUCESSO!</p>
-            <button id="pixel-modal-close-btn" class="pixel-modal-close-btn">FECHAR [OK]</button>
-        </div>
-    </div>
-
-    <!-- JAVASCRIPT LOGIC (WITH INDEPENDENT CONTROL PANEL HANDLERS) -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        <!-- PAINEL DE CONTROLE (Direita Flutuante) -->
+        <aside id="control-panel">
+            <button id="toggle-panel-btn">▶</button>
             
-            // State Variables
-            let isHtmlActive = true;
-            let isCssActive = true;
-            let isJsActive = true;
-            let isDarkTheme = true;
-            let counterValue = 0;
+            <div class="panel-content">
+                <h2 class="panel-title">DEV CONTROL<br>PANEL</h2>
 
-            // Control Panel Elements
-            const controlPanelWrapper = document.getElementById('control-panel-wrapper');
-            const panelToggleBtn = document.getElementById('panel-toggle-btn');
-            const switchHtml = document.getElementById('switch-html');
-            const switchCss = document.getElementById('switch-css');
-            const switchJs = document.getElementById('switch-js');
-            const jsStatusBadge = document.getElementById('js-status-badge');
-            const resetPanelBtn = document.getElementById('reset-panel-btn');
+                <!-- Toggle HTML -->
+                <div class="toggle-container">
+                    <div class="toggle-header">
+                        <span class="toggle-title">HTML (DOM)</span>
+                        <span class="toggle-status" id="status-html">LIGADO</span>
+                    </div>
+                    <button class="switch-btn" id="switch-html">DESATIVAR HTML</button>
+                    <div class="desc-text">Oculta toda a estrutura (esqueleto) da página.</div>
+                </div>
 
-            // Demo Elements
-            const demoApp = document.getElementById('demo-app');
-            const demoHtmlOffMsg = document.getElementById('demo-html-off-msg');
-            const demoCssStyle = document.getElementById('demo-css');
-            const themeToggleBtn = document.getElementById('theme-toggle-btn');
+                <!-- Toggle CSS -->
+                <div class="toggle-container">
+                    <div class="toggle-header">
+                        <span class="toggle-title">CSS (Estilos)</span>
+                        <span class="toggle-status" id="status-css">LIGADO</span>
+                    </div>
+                    <button class="switch-btn" id="switch-css">DESATIVAR CSS</button>
+                    <div class="desc-text">Remove o design, cores e grid. Deixa o HTML 'cru'.</div>
+                </div>
 
-            // Interactive Buttons
-            const btnColor = document.getElementById('btn-color');
-            const btnColorTag = document.getElementById('btn-color-tag');
-            const btnScale = document.getElementById('btn-scale');
-            const btnScaleTag = document.getElementById('btn-scale-tag');
-            const btnShape = document.getElementById('btn-shape');
-            const btnShapeTag = document.getElementById('btn-shape-tag');
-            const btnShake = document.getElementById('btn-shake');
-            const btnModal = document.getElementById('btn-modal');
-            const heroBuyBtn = document.getElementById('hero-buy-btn');
-
-            // Modal Elements
-            const pixelModal = document.getElementById('pixel-modal');
-            const pixelModalCloseBtn = document.getElementById('pixel-modal-close-btn');
-
-            // Counter Elements
-            const counterDisplay = document.getElementById('counter-display');
-            const counterInc = document.getElementById('counter-inc');
-            const counterDec = document.getElementById('counter-dec');
-            const counterReset = document.getElementById('counter-reset');
-
-            // 1. CONTROL PANEL COLLAPSE TOGGLE
-            panelToggleBtn.addEventListener('click', () => {
-                controlPanelWrapper.classList.toggle('collapsed');
-                panelToggleBtn.textContent = controlPanelWrapper.classList.contains('collapsed') ? '◀' : '▶';
-            });
-
-            // Helper to update toggle switch visual style
-            function updateSwitchVisual(btnElement, isActive) {
-                if (isActive) {
-                    btnElement.classList.remove('is-off');
-                    btnElement.classList.add('is-on');
-                    btnElement.textContent = 'LIGADO';
-                } else {
-                    btnElement.classList.remove('is-on');
-                    btnElement.classList.add('is-off');
-                    btnElement.textContent = 'DESLIGADO';
-                }
-            }
-
-            // 2. HTML TOGGLE SWITCH HANDLER
-            switchHtml.addEventListener('click', () => {
-                isHtmlActive = !isHtmlActive;
-                updateSwitchVisual(switchHtml, isHtmlActive);
-
-                if (isHtmlActive) {
-                    demoApp.style.display = 'block';
-                    demoHtmlOffMsg.style.display = 'none';
-                } else {
-                    demoApp.style.display = 'none';
-                    demoHtmlOffMsg.style.display = 'block';
-                }
-            });
-
-            // 3. CSS TOGGLE SWITCH HANDLER
-            switchCss.addEventListener('click', () => {
-                isCssActive = !isCssActive;
-                updateSwitchVisual(switchCss, isCssActive);
+                <!-- Toggle JS -->
+                <div class="toggle-container">
+                    <div class="toggle-header">
+                        <span class="toggle-title">JS (Scripts)</span>
+                        <span class="toggle-status" id="status-js">LIGADO</span>
+                    </div>
+                    <button class="switch-btn" id="switch-js">DESATIVAR JS</button>
+                    <div class="desc-text">Desabilita cliques, contador, tema e interações.</div>
+                </div>
                 
-                // Disable or enable demo CSS stylesheet tag
-                if (demoCssStyle) {
-                    demoCssStyle.disabled = !isCssActive;
-                }
-            });
+                <div style="margin-top: 40px; text-align: center; color: #555; font-size: 8px;">
+                    Simulador v1.0 <br> Protegido pelo Core
+                </div>
+            </div>
+        </aside>
+    </div>
 
-            // 4. JS TOGGLE SWITCH HANDLER
-            switchJs.addEventListener('click', () => {
-                isJsActive = !isJsActive;
-                updateSwitchVisual(switchJs, isJsActive);
+    <!-- Popup Customizado (para evitar alert nativo) -->
+    <div id="custom-popup">
+        <div class="popup-content">
+            <h3 style="color: #0ff;">MENSAGEM DE SISTEMA</h3>
+            <p>O JavaScript está funcionando perfeitamente!</p>
+            <button class="popup-btn" id="close-popup">OK, FECHAR</button>
+        </div>
+    </div>
 
-                if (isJsActive) {
-                    jsStatusBadge.textContent = 'STATUS: JS ATIVO';
-                    jsStatusBadge.style.color = '#00ff66';
-                } else {
-                    jsStatusBadge.textContent = 'STATUS: JS DESATIVADO';
-                    jsStatusBadge.style.color = '#ff2a2a';
-                }
-            });
+    <!-- 
+      ========================================================
+      ARQUIVO VIRTUAL: script.js
+      ========================================================
+    -->
+    <script>
+        // Variáveis de Estado para controlar quais tecnologias estão "ativas"
+        const engineState = {
+            html: true,
+            css: true,
+            js: true
+        };
 
-            // 5. RESTORE ALL PANEL BUTTON
-            resetPanelBtn.addEventListener('click', () => {
-                isHtmlActive = true;
-                isCssActive = true;
-                isJsActive = true;
+        // DOM Elements - Painel
+        const panel = document.getElementById('control-panel');
+        const togglePanelBtn = document.getElementById('toggle-panel-btn');
+        
+        // DOM Elements - Toggles
+        const switchHtml = document.getElementById('switch-html');
+        const switchCss = document.getElementById('switch-css');
+        const switchJs = document.getElementById('switch-js');
 
-                updateSwitchVisual(switchHtml, true);
-                updateSwitchVisual(switchCss, true);
-                updateSwitchVisual(switchJs, true);
-
-                demoApp.style.display = 'block';
-                demoHtmlOffMsg.style.display = 'none';
-                
-                if (demoCssStyle) demoCssStyle.disabled = false;
-
-                jsStatusBadge.textContent = 'STATUS: JS ATIVO';
-                jsStatusBadge.style.color = '#00ff66';
-            });
-
-            // Helper function to check if JavaScript is allowed in Demo Area
-            function canExecuteDemoJs() {
-                if (!isJsActive) {
-                    console.warn('Ações JavaScript na demonstração estão desativadas pelo Painel de Controle.');
-                    return false;
-                }
-                return true;
+        // Lógica de abrir/fechar o painel de controle
+        togglePanelBtn.addEventListener('click', () => {
+            panel.classList.toggle('collapsed');
+            if (panel.classList.contains('collapsed')) {
+                togglePanelBtn.innerText = '◀';
+            } else {
+                togglePanelBtn.innerText = '▶';
             }
-
-            // Dark / Light Theme Switcher
-            themeToggleBtn.addEventListener('click', () => {
-                if (!canExecuteDemoJs()) return;
-                isDarkTheme = !isDarkTheme;
-                if (isDarkTheme) {
-                    demoApp.classList.remove('light-theme');
-                    demoApp.classList.add('dark-theme');
-                    themeToggleBtn.textContent = 'MODO CLARO ☀️';
-                } else {
-                    demoApp.classList.remove('dark-theme');
-                    demoApp.classList.add('light-theme');
-                    themeToggleBtn.textContent = 'MODO ESCURO 🌙';
-                }
-            });
-
-            // Button 1: Color Changer
-            let colorIndex = 0;
-            const colorClasses = ['btn-color-1', 'btn-color-2', 'btn-color-3', 'btn-color-4'];
-            const colorNames = ['MAGENTA', 'CYAN', 'VERDE NEON', 'AMARELO'];
-
-            btnColor.addEventListener('click', () => {
-                if (!canExecuteDemoJs()) return;
-                btnColor.classList.remove(...colorClasses);
-                colorIndex = (colorIndex + 1) % (colorClasses.length + 1);
-                
-                if (colorIndex < colorClasses.length) {
-                    btnColor.classList.add(colorClasses[colorIndex]);
-                    btnColorTag.textContent = 'COR: ' + colorNames[colorIndex];
-                } else {
-                    colorIndex = 0;
-                    btnColorTag.textContent = 'COR: PADRÃO';
-                }
-            });
-
-            // Button 2: Scale Up
-            let scaleIndex = 0;
-            const scaleClasses = ['btn-scale-1', 'btn-scale-2', 'btn-scale-3'];
-            const scaleLabels = ['1.0x', '1.12x', '1.24x'];
-
-            btnScale.addEventListener('click', () => {
-                if (!canExecuteDemoJs()) return;
-                btnScale.classList.remove(...scaleClasses);
-                scaleIndex = (scaleIndex + 1) % scaleClasses.length;
-                btnScale.classList.add(scaleClasses[scaleIndex]);
-                btnScaleTag.textContent = 'ESCALA: ' + scaleLabels[scaleIndex];
-            });
-
-            // Button 3: Shape Shifter
-            let shapeIndex = 0;
-            const shapeClasses = ['btn-shape-1', 'btn-shape-2', 'btn-shape-3'];
-            const shapeLabels = ['RETÂNGULO', 'CORTADO', 'ARREDONDADO'];
-
-            btnShape.addEventListener('click', () => {
-                if (!canExecuteDemoJs()) return;
-                btnShape.classList.remove(...shapeClasses);
-                shapeIndex = (shapeIndex + 1) % shapeClasses.length;
-                btnShape.classList.add(shapeClasses[shapeIndex]);
-                btnShapeTag.textContent = 'FORMA: ' + shapeLabels[shapeIndex];
-            });
-
-            // Button 4: Shake Effect
-            btnShake.addEventListener('click', () => {
-                if (!canExecuteDemoJs()) return;
-                btnShake.classList.remove('shake-anim');
-                void btnShake.offsetWidth; // Trigger reflow
-                btnShake.classList.add('shake-anim');
-            });
-
-            // Button 5 & Hero Buy: Retro Pixel Modal
-            function openModal() {
-                if (!canExecuteDemoJs()) return;
-                pixelModal.classList.add('active');
-            }
-
-            btnModal.addEventListener('click', openModal);
-            heroBuyBtn.addEventListener('click', openModal);
-
-            pixelModalCloseBtn.addEventListener('click', () => {
-                if (!canExecuteDemoJs()) return;
-                pixelModal.classList.remove('active');
-            });
-
-            // Digital Counter Functions
-            function updateCounter() {
-                const formatted = counterValue.toString().padStart(4, '0');
-                counterDisplay.textContent = 'SCORE: ' + formatted;
-            }
-
-            counterInc.addEventListener('click', () => {
-                if (!canExecuteDemoJs()) return;
-                counterValue++;
-                updateCounter();
-            });
-
-            counterDec.addEventListener('click', () => {
-                if (!canExecuteDemoJs()) return;
-                if (counterValue > 0) counterValue--;
-                updateCounter();
-            });
-
-            counterReset.addEventListener('click', () => {
-                if (!canExecuteDemoJs()) return;
-                counterValue = 0;
-                updateCounter();
-            });
-
         });
+
+        // --- FUNÇÕES DE CONTROLE DE TECNOLOGIA ---
+
+        function updateToggleUI(type, isActive) {
+            const statusBadge = document.getElementById(`status-${type}`);
+            const switchBtn = document.getElementById(`switch-${type}`);
+            
+            if (isActive) {
+                statusBadge.innerText = 'LIGADO';
+                statusBadge.classList.remove('off');
+                switchBtn.innerText = `DESATIVAR ${type.toUpperCase()}`;
+            } else {
+                statusBadge.innerText = 'DESLIG';
+                statusBadge.classList.add('off');
+                switchBtn.innerText = `ATIVAR ${type.toUpperCase()}`;
+            }
+        }
+
+        // Toggle HTML
+        switchHtml.addEventListener('click', () => {
+            engineState.html = !engineState.html;
+            updateToggleUI('html', engineState.html);
+            
+            const demoContent = document.getElementById('demo-content');
+            const noHtmlScreen = document.getElementById('no-html-screen');
+            
+            if (engineState.html) {
+                demoContent.style.display = 'block';
+                noHtmlScreen.style.display = 'none';
+            } else {
+                demoContent.style.display = 'none';
+                noHtmlScreen.style.display = 'flex';
+            }
+        });
+
+        // Toggle CSS
+        switchCss.addEventListener('click', () => {
+            engineState.css = !engineState.css;
+            updateToggleUI('css', engineState.css);
+            
+            // O truque da magia: Desativamos APENAS a tag <style> referente à demo
+            const demoStyles = document.getElementById('demo-styles');
+            demoStyles.disabled = !engineState.css;
+        });
+
+        // Toggle JS
+        switchJs.addEventListener('click', () => {
+            engineState.js = !engineState.js;
+            updateToggleUI('js', engineState.js);
+            // JS não é desativado de fato na engine do navegador aqui, 
+            // mas nós interceptamos as execuções nos eventos da área de demo.
+        });
+
+
+        // --- INTERAÇÕES DA ÁREA DE DEMONSTRAÇÃO ---
+        // IMPORTANTE: Todas as interações abaixo verificam `if(!engineState.js) return;`
+
+        // 1. Dark/Light Mode
+        document.getElementById('btn-theme').addEventListener('click', () => {
+            if (!engineState.js) return;
+            document.getElementById('demo-content').classList.toggle('light-mode');
+        });
+
+        // 2. Botões Interativos (Exibição de Respostas)
+        
+        // Botão 1: Muda de cor
+        document.getElementById('btn-color').addEventListener('click', function() {
+            if (!engineState.js) return;
+            const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+            this.style.backgroundColor = randomColor;
+            this.style.color = '#fff';
+        });
+
+        // Botão 2: Aumenta de tamanho
+        let scaleState = 1;
+        document.getElementById('btn-scale').addEventListener('click', function() {
+            if (!engineState.js) return;
+            scaleState = scaleState === 1 ? 1.2 : 1;
+            this.style.transform = `scale(${scaleState})`;
+        });
+
+        // Botão 3: Altera forma/borda
+        let isRounded = false;
+        document.getElementById('btn-shape').addEventListener('click', function() {
+            if (!engineState.js) return;
+            isRounded = !isRounded;
+            this.style.borderRadius = isRounded ? '25px' : '0px';
+        });
+
+        // Botão 4: Hover Dinâmico (Texto)
+        const btnHover = document.getElementById('btn-hover');
+        const originalText = btnHover.innerText;
+        btnHover.addEventListener('mouseenter', function() {
+            if (!engineState.js) return;
+            this.innerText = "TREMENDO!";
+        });
+        btnHover.addEventListener('mouseleave', function() {
+            if (!engineState.js) return; // Se desativar o JS enquanto estiver no hover, ele não reseta! (Comportamento esperado)
+            this.innerText = originalText;
+        });
+
+        // Botão 5: Dispara Alerta Popup
+        const popup = document.getElementById('custom-popup');
+        document.getElementById('btn-alert').addEventListener('click', () => {
+            if (!engineState.js) return;
+            popup.style.display = 'flex';
+        });
+        document.getElementById('close-popup').addEventListener('click', () => {
+            // Esse não precisa da trava de estado JS, pois precisamos fechar a janela para não travar a tela
+            popup.style.display = 'none'; 
+        });
+        
+        // Comprar
+        document.getElementById('btn-buy').addEventListener('click', () => {
+             if (!engineState.js) return;
+             alert("Interação capturada pelo Javascript!"); // Usa alert padrão aqui apenas como fallback seguro ou custom modal.
+             // Redirecionando pro custom popup
+             document.querySelector('.popup-content p').innerText = "Item adicionado ao carrinho!";
+             popup.style.display = 'flex';
+        });
+
+        // 3. Seção Interativa - Contador Numérico
+        let counterValue = 0;
+        const display = document.getElementById('counter-value');
+
+        function updateCounterDisplay() {
+            display.innerText = counterValue;
+        }
+
+        document.getElementById('btn-increment').addEventListener('click', () => {
+            if (!engineState.js) return;
+            counterValue++;
+            updateCounterDisplay();
+        });
+
+        document.getElementById('btn-decrement').addEventListener('click', () => {
+            if (!engineState.js) return;
+            counterValue--;
+            updateCounterDisplay();
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            if (!engineState.js) return;
+            counterValue = 0;
+            updateCounterDisplay();
+        });
+
     </script>
 </body>
 </html>
