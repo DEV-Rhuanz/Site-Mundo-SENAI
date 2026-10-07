@@ -1,715 +1,103 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro Dev Simulator</title>
-    
-    <!-- Fonte Retro em Pixel Art -->
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-
-    <!-- 
-      ========================================================
-      ARQUIVO VIRTUAL: style-core.css
-      (Estilos do Painel de Controle e Layout Base - NUNCA DESATIVADOS)
-      ========================================================
-    -->
-    <style id="core-styles">
-        :root {
-            --panel-bg: #222;
-            --panel-border: #fff;
-            --neon-green: #39ff14;
-            --neon-red: #ff073a;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            background-color: #000;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fonte base caso tudo falhe */
-        }
-
-        /* Container que divide a tela */
-        #app-container {
-            display: flex;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Wrapper da área de demonstração (ocupa o resto da tela) */
-        #demo-wrapper {
-            flex-grow: 1;
-            height: 100%;
-            overflow-y: auto;
-            position: relative;
-            background-color: #ffffff; /* Fundo branco padrao do navegador para modo sem CSS */
-        }
-
-        /* Tela de erro quando o HTML é desativado */
-        #no-html-screen {
-            display: none;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            color: #39ff14;
-            font-family: 'Courier New', Courier, monospace;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            text-align: center;
-            padding: 20px;
-        }
-
-        /* PAINEL DE CONTROLE (Sidebar) */
-        #control-panel {
-            position: fixed;
-            top: 0;
-            right: 0;
-            width: 320px;
-            height: 100%;
-            background-color: var(--panel-bg);
-            border-left: 6px solid var(--panel-border);
-            box-shadow: -8px 0 0px #555;
-            z-index: 1000;
-            transition: transform 0.4s ease-in-out;
-            display: flex;
-            flex-direction: column;
-            font-family: 'Press Start 2P', monospace;
-            color: white;
-            font-size: 12px;
-        }
-
-        #control-panel.collapsed {
-            transform: translateX(320px);
-        }
-
-        /* Botão de abrir/fechar o painel */
-        #toggle-panel-btn {
-            position: absolute;
-            left: -48px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 48px;
-            height: 60px;
-            background-color: var(--panel-bg);
-            border: 6px solid var(--panel-border);
-            border-right: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 16px;
-            box-shadow: -4px 4px 0 #555;
-            transition: background 0.2s;
-        }
-
-        #toggle-panel-btn:hover {
-            background-color: #444;
-        }
-
-        .panel-content {
-            padding: 20px;
-            overflow-y: auto;
-            flex-grow: 1;
-        }
-
-        .panel-title {
-            text-align: center;
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 30px;
-            color: #f0f;
-            text-shadow: 2px 2px 0 #fff;
-        }
-
-        /* Estilo dos Toggles */
-        .toggle-container {
-            margin-bottom: 30px;
-            background: #111;
-            padding: 15px;
-            border: 4px solid #fff;
-        }
-
-        .toggle-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .toggle-title {
-            font-size: 14px;
-            color: #0ff;
-        }
-
-        .toggle-status {
-            font-size: 10px;
-            padding: 4px 8px;
-            background: var(--neon-green);
-            color: #000;
-            border: 2px solid #fff;
-        }
-
-        .toggle-status.off {
-            background: var(--neon-red);
-            color: #fff;
-        }
-
-        /* O Switch Visual */
-        .switch-btn {
-            width: 100%;
-            padding: 10px;
-            background: #333;
-            border: 4px solid #555;
-            color: white;
-            font-family: inherit;
-            cursor: pointer;
-            text-transform: uppercase;
-            box-shadow: 4px 4px 0 #000;
-            transition: all 0.1s;
-        }
-
-        .switch-btn:active {
-            box-shadow: 0 0 0 #000;
-            transform: translate(4px, 4px);
-        }
-
-        .desc-text {
-            margin-top: 10px;
-            font-size: 9px;
-            line-height: 1.4;
-            color: #aaa;
-        }
-        
-        /* Modal Popup isolado no Core para funcionar sempre que chamado */
-        #custom-popup {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-        }
-        .popup-content {
-            background: #000;
-            border: 6px solid #f0f;
-            box-shadow: 8px 8px 0 #0ff;
-            padding: 30px;
-            text-align: center;
-            font-family: 'Press Start 2P', monospace;
-            color: white;
-        }
-        .popup-btn {
-            margin-top: 20px;
-            background: #f0f;
-            color: white;
-            border: 4px solid #fff;
-            padding: 10px 20px;
-            font-family: inherit;
-            cursor: pointer;
-        }
-    </style>
-
-    <!-- 
-      ========================================================
-      ARQUIVO VIRTUAL: style-demo.css
-      (CSS EXCLUSIVO DA ÁREA DE DEMONSTRAÇÃO - Pode ser desativado)
-      ========================================================
-    -->
-    <style id="demo-styles">
-        #demo-content {
-            --bg-color: #2b2b40;
-            --text-color: #ffffff;
-            --primary: #ff00ff; /* Magenta */
-            --secondary: #00ffff; /* Cyan */
-            --accent: #ffff00; /* Yellow */
-            --border-width: 4px;
-            
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Press Start 2P', monospace;
-            min-height: 100%;
-            padding-bottom: 50px;
-            transition: background 0.3s, color 0.3s;
-        }
-
-        /* Dark / Light Mode */
-        #demo-content.light-mode {
-            --bg-color: #e0e0e0;
-            --text-color: #111111;
-            --primary: #d900d9;
-            --secondary: #00cccc;
-            --accent: #cccc00;
-        }
-
-        .demo-container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .demo-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: var(--border-width) solid var(--primary);
-            padding-bottom: 20px;
-            margin-bottom: 40px;
-        }
-
-        .demo-header h1 {
-            font-size: 24px;
-            text-shadow: 3px 3px 0px var(--secondary);
-            margin: 0;
-        }
-
-        .btn-retro {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            border: var(--border-width) solid var(--text-color);
-            box-shadow: 4px 4px 0px var(--primary);
-            padding: 10px 15px;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 12px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: transform 0.1s, box-shadow 0.1s;
-        }
-
-        .btn-retro:active {
-            transform: translate(4px, 4px);
-            box-shadow: 0px 0px 0px var(--primary);
-        }
-
-        .hero-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            margin-bottom: 60px;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 40px;
-            border: var(--border-width) solid var(--secondary);
-            box-shadow: 8px 8px 0px var(--primary);
-        }
-
-        .hero-title {
-            font-size: 20px;
-            color: var(--accent);
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-
-        /* Estilo do Placeholder (Substitui imagem pesada) */
-        .img-placeholder {
-            width: 250px;
-            height: 250px;
-            background-color: #444;
-            border: var(--border-width) dashed var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 20px 0;
-            color: #888;
-            font-size: 10px;
-            text-align: center;
-            line-height: 1.6;
-        }
-
-        .btn-buy {
-            background-color: var(--primary);
-            color: #fff;
-            font-size: 16px;
-            padding: 15px 30px;
-            border-color: #fff;
-            box-shadow: 6px 6px 0px var(--secondary);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .section-title {
-            font-size: 16px;
-            border-bottom: 2px dashed var(--text-color);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        .grid-buttons {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 50px;
-        }
-
-        .action-btn {
-            padding: 20px 10px;
-            font-size: 10px;
-            line-height: 1.5;
-        }
-
-        /* Animação Hover no Botão 4 */
-        .btn-hover-shake:hover {
-            animation: shake 0.5s;
-            background-color: var(--accent);
-            color: #000;
-        }
-
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
-        }
-
-        .interactive-section {
-            background-color: rgba(255, 255, 255, 0.05);
-            padding: 30px;
-            border: var(--border-width) solid var(--text-color);
-            text-align: center;
-        }
-
-        .counter-display {
-            font-size: 40px;
-            margin: 20px 0;
-            color: var(--secondary);
-            text-shadow: 4px 4px 0px #000;
-        }
-
-        .counter-controls {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        .counter-controls button {
-            font-size: 16px;
-            padding: 10px 20px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Laboratório Arcade: HTML, CSS e JS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- 
-      ========================================================
-      ARQUIVO VIRTUAL: index.html (Estrutura DOM)
-      ========================================================
-    -->
-    <div id="app-container">
-        
-        <!-- ÁREA DE DEMONSTRAÇÃO (Esquerda) -->
-        <main id="demo-wrapper">
-            
-            <!-- Tela exibida apenas quando o HTML é "desativado" -->
-            <div id="no-html-screen">
-                <h2>FATAL ERROR 404</h2>
-                <p>DOM (Document Object Model) não encontrado.</p>
-                <p>O HTML foi desativado.</p>
-            </div>
+  <!-- ÁREA DE DEMONSTRAÇÃO -->
+  <div id="stage">
+    <div id="demo" data-theme="dark">
 
-            <!-- Conteúdo Real da Demo -->
-            <div id="demo-content">
-                <div class="demo-container">
-                    
-                    <!-- Cabeçalho -->
-                    <header class="demo-header">
-                        <h1>PIXEL CONSOLE</h1>
-                        <button class="btn-retro" id="btn-theme">Mudar Tema</button>
-                    </header>
+      <header class="topo">
+        <h1 class="logo">PIXELBOX 64</h1>
+        <nav class="menu" aria-label="Menu de teste">
+          <a href="#hero" class="menu-link ativo">Início</a>
+          <a href="#botoes" class="menu-link">Botões</a>
+          <a href="#contador" class="menu-link">Contador</a>
+        </nav>
+        <button id="btn-tema" class="btn" type="button">MODO CLARO</button>
+      </header>
 
-                    <!-- Hero Section -->
-                    <section class="hero-section">
-                        <h2 class="hero-title">O FUTURO DO RETRÔ CHEGOU!</h2>
-                        
-                        <!-- Placeholder CSS imitando Imagem -->
-                        <div class="img-placeholder">
-                            &lt;img src="produto.jpg" alt="Console Retrô" /&gt;<br><br>
-                            [IMAGEM 250x250]
-                        </div>
+      <main>
+        <section id="hero" class="hero">
+          <div class="hero-texto">
+            <h2>JOGUE COMO EM 1986</h2>
+            <p>O console de bolso com cartuchos de verdade e 64 cores.</p>
+            <button class="btn btn-compra" type="button">COMPRAR POR R$ 299</button>
+          </div>
+          <div class="ph-frame">
+            <img class="produto-img" src="LINK_DA_SUA_IMAGEM_AQUI" alt="[ IMAGEM DO PRODUTO ]">
+          </div>
+        </section>
 
-                        <p style="margin-bottom: 20px; font-size: 12px; line-height: 1.8;">
-                            Experimente o poder dos 8-bits no seu navegador. <br>
-                            Garanta já o seu exemplar de edição limitada!
-                        </p>
-                        <button class="btn-retro btn-buy" id="btn-buy">COMPRAR AGORA</button>
-                    </section>
+        <section id="botoes" class="bloco">
+          <h2>BOTÕES INTERATIVOS</h2>
+          <div class="grade-botoes">
+            <button id="b-cor" class="btn" type="button">1. MUDAR COR</button>
+            <button id="b-escala" class="btn" type="button">2. AUMENTAR</button>
+            <button id="b-forma" class="btn" type="button">3. MUDAR FORMA</button>
+            <button id="b-hover" class="btn" type="button">4. PASSE O MOUSE</button>
+            <button id="b-alerta" class="btn" type="button">5. ALERTA</button>
+          </div>
+        </section>
 
-                    <!-- Seção de Botões de Teste JS/CSS -->
-                    <h2 class="section-title">TESTE DE INTERAÇÕES:</h2>
-                    <div class="grid-buttons">
-                        <button class="btn-retro action-btn" id="btn-color">1. Mudar Cor</button>
-                        <button class="btn-retro action-btn" id="btn-scale">2. Aumentar Tamanho</button>
-                        <button class="btn-retro action-btn" id="btn-shape">3. Mudar Forma</button>
-                        <button class="btn-retro action-btn btn-hover-shake" id="btn-hover">4. Passe o Mouse!</button>
-                        <button class="btn-retro action-btn" id="btn-alert">5. Disparar Popup</button>
-                    </div>
+        <section id="contador" class="bloco">
+          <h2>CONTADOR</h2>
+          <div class="contador">
+            <button id="c-menos" class="btn" type="button" aria-label="Diminuir">-</button>
+            <output id="c-valor" class="visor">0</output>
+            <button id="c-mais" class="btn" type="button" aria-label="Aumentar">+</button>
+            <button id="c-zero" class="btn" type="button">RESET</button>
+          </div>
+        </section>
+      </main>
 
-                    <!-- Seção de Contador (Estado JS) -->
-                    <h2 class="section-title">MÁQUINA DE ESTADOS (Contador):</h2>
-                    <section class="interactive-section">
-                        <div class="counter-display" id="counter-value">0</div>
-                        <div class="counter-controls">
-                            <button class="btn-retro" id="btn-decrement">-</button>
-                            <button class="btn-retro" id="btn-reset">ZERO</button>
-                            <button class="btn-retro" id="btn-increment">+</button>
-                        </div>
-                    </section>
-                </div>
-            </div>
-        </main>
+      <footer class="rodape">INSERT COIN © 1986 PIXELBOX</footer>
 
-        <!-- PAINEL DE CONTROLE (Direita Flutuante) -->
-        <aside id="control-panel">
-            <button id="toggle-panel-btn">▶</button>
-            
-            <div class="panel-content">
-                <h2 class="panel-title">DEV CONTROL<br>PANEL</h2>
-
-                <!-- Toggle HTML -->
-                <div class="toggle-container">
-                    <div class="toggle-header">
-                        <span class="toggle-title">HTML (DOM)</span>
-                        <span class="toggle-status" id="status-html">LIGADO</span>
-                    </div>
-                    <button class="switch-btn" id="switch-html">DESATIVAR HTML</button>
-                    <div class="desc-text">Oculta toda a estrutura (esqueleto) da página.</div>
-                </div>
-
-                <!-- Toggle CSS -->
-                <div class="toggle-container">
-                    <div class="toggle-header">
-                        <span class="toggle-title">CSS (Estilos)</span>
-                        <span class="toggle-status" id="status-css">LIGADO</span>
-                    </div>
-                    <button class="switch-btn" id="switch-css">DESATIVAR CSS</button>
-                    <div class="desc-text">Remove o design, cores e grid. Deixa o HTML 'cru'.</div>
-                </div>
-
-                <!-- Toggle JS -->
-                <div class="toggle-container">
-                    <div class="toggle-header">
-                        <span class="toggle-title">JS (Scripts)</span>
-                        <span class="toggle-status" id="status-js">LIGADO</span>
-                    </div>
-                    <button class="switch-btn" id="switch-js">DESATIVAR JS</button>
-                    <div class="desc-text">Desabilita cliques, contador, tema e interações.</div>
-                </div>
-                
-                <div style="margin-top: 40px; text-align: center; color: #555; font-size: 8px;">
-                    Simulador v1.0 <br> Protegido pelo Core
-                </div>
-            </div>
-        </aside>
-    </div>
-
-    <!-- Popup Customizado (para evitar alert nativo) -->
-    <div id="custom-popup">
-        <div class="popup-content">
-            <h3 style="color: #0ff;">MENSAGEM DE SISTEMA</h3>
-            <p>O JavaScript está funcionando perfeitamente!</p>
-            <button class="popup-btn" id="close-popup">OK, FECHAR</button>
+      <div id="popup" class="popup" hidden>
+        <div class="popup-caixa" role="alertdialog" aria-label="Alerta">
+          <p>PLAYER 1 PRONTO!</p>
+          <button id="popup-fechar" class="btn" type="button">OK</button>
         </div>
+      </div>
     </div>
 
-    <!-- 
-      ========================================================
-      ARQUIVO VIRTUAL: script.js
-      ========================================================
-    -->
-    <script>
-        // Variáveis de Estado para controlar quais tecnologias estão "ativas"
-        const engineState = {
-            html: true,
-            css: true,
-            js: true
-        };
+    <!-- Tela exibida quando o HTML está desligado -->
+    <div id="vazio" hidden>
+      <p>ERRO: DOM NÃO ENCONTRADO</p>
+      <p>Sem HTML, não há estrutura para mostrar.</p>
+    </div>
+  </div>
 
-        // DOM Elements - Painel
-        const panel = document.getElementById('control-panel');
-        const togglePanelBtn = document.getElementById('toggle-panel-btn');
-        
-        // DOM Elements - Toggles
-        const switchHtml = document.getElementById('switch-html');
-        const switchCss = document.getElementById('switch-css');
-        const switchJs = document.getElementById('switch-js');
+  <!-- PAINEL DE CONTROLE (nunca é afetado pelos toggles) -->
+  <aside id="painel" class="aberto">
+    <button id="painel-aba" type="button" aria-label="Abrir ou fechar painel" aria-expanded="true">&#9658;</button>
+    <h2>CONTROLE</h2>
+    <p class="painel-dica">Desligue cada tecnologia e veja o que muda.</p>
 
-        // Lógica de abrir/fechar o painel de controle
-        togglePanelBtn.addEventListener('click', () => {
-            panel.classList.toggle('collapsed');
-            if (panel.classList.contains('collapsed')) {
-                togglePanelBtn.innerText = '◀';
-            } else {
-                togglePanelBtn.innerText = '▶';
-            }
-        });
+    <div class="linha">
+      <span>HTML</span>
+      <button class="toggle on" data-alvo="html" type="button" role="switch" aria-checked="true">LIGADO</button>
+    </div>
+    <div class="linha">
+      <span>CSS</span>
+      <button class="toggle on" data-alvo="css" type="button" role="switch" aria-checked="true">LIGADO</button>
+    </div>
+    <div class="linha">
+      <span>JS</span>
+      <button class="toggle on" data-alvo="js" type="button" role="switch" aria-checked="true">LIGADO</button>
+    </div>
 
-        // --- FUNÇÕES DE CONTROLE DE TECNOLOGIA ---
+    <p id="painel-status" class="painel-status">TUDO ATIVO</p>
+  </aside>
 
-        function updateToggleUI(type, isActive) {
-            const statusBadge = document.getElementById(`status-${type}`);
-            const switchBtn = document.getElementById(`switch-${type}`);
-            
-            if (isActive) {
-                statusBadge.innerText = 'LIGADO';
-                statusBadge.classList.remove('off');
-                switchBtn.innerText = `DESATIVAR ${type.toUpperCase()}`;
-            } else {
-                statusBadge.innerText = 'DESLIG';
-                statusBadge.classList.add('off');
-                switchBtn.innerText = `ATIVAR ${type.toUpperCase()}`;
-            }
-        }
-
-        // Toggle HTML
-        switchHtml.addEventListener('click', () => {
-            engineState.html = !engineState.html;
-            updateToggleUI('html', engineState.html);
-            
-            const demoContent = document.getElementById('demo-content');
-            const noHtmlScreen = document.getElementById('no-html-screen');
-            
-            if (engineState.html) {
-                demoContent.style.display = 'block';
-                noHtmlScreen.style.display = 'none';
-            } else {
-                demoContent.style.display = 'none';
-                noHtmlScreen.style.display = 'flex';
-            }
-        });
-
-        // Toggle CSS
-        switchCss.addEventListener('click', () => {
-            engineState.css = !engineState.css;
-            updateToggleUI('css', engineState.css);
-            
-            // O truque da magia: Desativamos APENAS a tag <style> referente à demo
-            const demoStyles = document.getElementById('demo-styles');
-            demoStyles.disabled = !engineState.css;
-        });
-
-        // Toggle JS
-        switchJs.addEventListener('click', () => {
-            engineState.js = !engineState.js;
-            updateToggleUI('js', engineState.js);
-            // JS não é desativado de fato na engine do navegador aqui, 
-            // mas nós interceptamos as execuções nos eventos da área de demo.
-        });
-
-
-        // --- INTERAÇÕES DA ÁREA DE DEMONSTRAÇÃO ---
-        // IMPORTANTE: Todas as interações abaixo verificam `if(!engineState.js) return;`
-
-        // 1. Dark/Light Mode
-        document.getElementById('btn-theme').addEventListener('click', () => {
-            if (!engineState.js) return;
-            document.getElementById('demo-content').classList.toggle('light-mode');
-        });
-
-        // 2. Botões Interativos (Exibição de Respostas)
-        
-        // Botão 1: Muda de cor
-        document.getElementById('btn-color').addEventListener('click', function() {
-            if (!engineState.js) return;
-            const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
-            this.style.backgroundColor = randomColor;
-            this.style.color = '#fff';
-        });
-
-        // Botão 2: Aumenta de tamanho
-        let scaleState = 1;
-        document.getElementById('btn-scale').addEventListener('click', function() {
-            if (!engineState.js) return;
-            scaleState = scaleState === 1 ? 1.2 : 1;
-            this.style.transform = `scale(${scaleState})`;
-        });
-
-        // Botão 3: Altera forma/borda
-        let isRounded = false;
-        document.getElementById('btn-shape').addEventListener('click', function() {
-            if (!engineState.js) return;
-            isRounded = !isRounded;
-            this.style.borderRadius = isRounded ? '25px' : '0px';
-        });
-
-        // Botão 4: Hover Dinâmico (Texto)
-        const btnHover = document.getElementById('btn-hover');
-        const originalText = btnHover.innerText;
-        btnHover.addEventListener('mouseenter', function() {
-            if (!engineState.js) return;
-            this.innerText = "TREMENDO!";
-        });
-        btnHover.addEventListener('mouseleave', function() {
-            if (!engineState.js) return; // Se desativar o JS enquanto estiver no hover, ele não reseta! (Comportamento esperado)
-            this.innerText = originalText;
-        });
-
-        // Botão 5: Dispara Alerta Popup
-        const popup = document.getElementById('custom-popup');
-        document.getElementById('btn-alert').addEventListener('click', () => {
-            if (!engineState.js) return;
-            popup.style.display = 'flex';
-        });
-        document.getElementById('close-popup').addEventListener('click', () => {
-            // Esse não precisa da trava de estado JS, pois precisamos fechar a janela para não travar a tela
-            popup.style.display = 'none'; 
-        });
-        
-        // Comprar
-        document.getElementById('btn-buy').addEventListener('click', () => {
-             if (!engineState.js) return;
-             alert("Interação capturada pelo Javascript!"); // Usa alert padrão aqui apenas como fallback seguro ou custom modal.
-             // Redirecionando pro custom popup
-             document.querySelector('.popup-content p').innerText = "Item adicionado ao carrinho!";
-             popup.style.display = 'flex';
-        });
-
-        // 3. Seção Interativa - Contador Numérico
-        let counterValue = 0;
-        const display = document.getElementById('counter-value');
-
-        function updateCounterDisplay() {
-            display.innerText = counterValue;
-        }
-
-        document.getElementById('btn-increment').addEventListener('click', () => {
-            if (!engineState.js) return;
-            counterValue++;
-            updateCounterDisplay();
-        });
-
-        document.getElementById('btn-decrement').addEventListener('click', () => {
-            if (!engineState.js) return;
-            counterValue--;
-            updateCounterDisplay();
-        });
-
-        document.getElementById('btn-reset').addEventListener('click', () => {
-            if (!engineState.js) return;
-            counterValue = 0;
-            updateCounterDisplay();
-        });
-
-    </script>
+  <script src="script.js"></script>
 </body>
 </html>
