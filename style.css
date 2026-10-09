@@ -66,12 +66,12 @@ body.panel-closed .demo-area { margin-right: 44px; }
   & .logo-box {
     position: relative;
     flex: 0 0 auto;
-    width: 56px;
+    width: 200px;  /* área interna da imagem: 192 x 48 px */
     height: 56px;
     margin: 0;
     overflow: hidden;
     border: 4px solid var(--ink);
-    background: repeating-conic-gradient(#e9dfc7 0% 25%, #d8ccb0 0% 50%) 0 0 / 16px 16px;
+    background: #fff;
   }
   & .logo-box::before {
     content: attr(data-label);
@@ -82,7 +82,7 @@ body.panel-closed .demo-area { margin-right: 44px; }
     padding: 2px;
     text-align: center;
     font-family: 'Press Start 2P', monospace;
-    font-size: 6px;
+    font-size: 7px;
     line-height: 1.4;
   }
   & .logo-box img {
@@ -91,7 +91,6 @@ body.panel-closed .demo-area { margin-right: 44px; }
     width: 100%;
     height: 100%;
     object-fit: contain;
-    image-rendering: pixelated;
   }
   & .logo {
     margin: 0;
