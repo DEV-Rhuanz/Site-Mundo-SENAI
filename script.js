@@ -3,6 +3,8 @@
 
   const demo = document.getElementById('demo');
   const modal = document.getElementById('modal');
+  const buyModal = document.getElementById('buyModal');
+  const modals = [modal, buyModal];
   const panel = document.getElementById('panel');
   const panelTab = document.getElementById('panelTab');
   const hoverBtn = demo.querySelector('[data-action="hover"]');
@@ -16,7 +18,7 @@
 
   /* ---------- Utilidades ---------- */
   function closeModal() {
-    modal.hidden = true;
+    modals.forEach((m) => { m.hidden = true; });
   }
 
   function resetHover() {
@@ -80,7 +82,7 @@
   demo.addEventListener('click', (event) => {
     if (!state.js) return; // JavaScript desativado: nada acontece
 
-    if (event.target === modal) {
+    if (modals.includes(event.target)) {
       closeModal();
       return;
     }
@@ -100,6 +102,9 @@
         break;
       case 'modal':
         modal.hidden = false;
+        break;
+      case 'buy':
+        buyModal.hidden = false;
         break;
       case 'close':
         closeModal();
