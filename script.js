@@ -9,10 +9,14 @@
   const panelTab = document.getElementById('panelTab');
   const hoverBtn = demo.querySelector('[data-action="hover"]');
 
+  // Estado das três "camadas" da página
   const state = { html: true, css: true, js: true };
 
+  // Guarda os nós removidos quando o HTML é desativado
+  // (mover os nós preserva os eventos ao reativar)
   let stash = null;
 
+  /* ---------- Utilidades ---------- */
   function closeModal() {
     modals.forEach((m) => { m.hidden = true; });
   }
@@ -29,6 +33,7 @@
     btn.querySelector('.switch-text').textContent = isOn ? 'LIGADO' : 'DESLIGADO';
   }
 
+  /* ---------- Painel de controle: toggles ---------- */
   function applyLayer(key) {
     closeModal();
 
@@ -44,6 +49,7 @@
     }
 
     if (key === 'css') {
+      // Remove só a classe da demo: o painel continua estilizado
       demo.classList.toggle('styled', state.css);
       document.body.classList.toggle('demo-raw', !state.css);
     }
@@ -52,6 +58,7 @@
       resetHover();
     }
 
+    // Desligar HTML ou JS interrompe a corrida
     if ((key === 'html' && !state.html) || (key === 'js' && !state.js)) {
       stopRace();
     }
@@ -66,6 +73,7 @@
     });
   });
 
+  /* ---------- Painel de controle: recolher/expandir ---------- */
   panelTab.addEventListener('click', () => {
     const collapsed = panel.classList.toggle('collapsed');
     document.body.classList.toggle('panel-closed', collapsed);
@@ -74,8 +82,10 @@
     panelTab.setAttribute('aria-label', collapsed ? 'Expandir painel' : 'Recolher painel');
   });
 
+  /* ---------- Interações da demonstração ---------- */
+  // Delegação de eventos: funciona mesmo depois de remover/recolocar o HTML
   demo.addEventListener('click', (event) => {
-    if (!state.js) return;
+    if (!state.js) return; // JavaScript desativado: nada acontece
 
     if (modals.includes(event.target)) {
       closeModal();
@@ -98,6 +108,16 @@
       case 'modal':
         modal.hidden = false;
         break;
+      case 'level':
+        if (mode === 'countdown' || mode === 'racing') break; // não troca no meio da corrida
+        level = Number(btn.dataset.level);
+        demo.querySelectorAll('[data-action="level"]').forEach((b) => {
+          const on = b === btn;
+          b.classList.toggle('is-selected', on);
+          b.setAttribute('aria-pressed', String(on));
+        });
+        stopRace();
+        break;
       case 'race-start':
         startRace();
         break;
@@ -110,6 +130,7 @@
     }
   });
 
+  // Botão 4: hover dinâmico (troca o texto e treme levemente)
   hoverBtn.addEventListener('mouseenter', () => {
     if (!state.js) return;
     hoverBtn.textContent = hoverBtn.dataset.hover;
@@ -117,32 +138,45 @@
   });
   hoverBtn.addEventListener('mouseleave', resetHover);
 
+  // Esc fecha o popup
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && state.js) closeModal();
   });
-
+  /* ---------- Mini corrida (vista de cima) ---------- */
   const cv = document.getElementById('raceCanvas');
   const ctx = cv.getContext('2d');
   const W = cv.width, H = cv.height;
-  const CX = 160, CY = 92, TAU = Math.PI * 2, LAPS = 3, RIVAL_SPEED = 0.55;
+  const CX = 160, CY = 92, TAU = Math.PI * 2, LAPS = 3;
+  // Dificuldades: velocidade do rival (rad/s) e obstáculos [ângulo, faixa]
+  const LEVELS = [
+    { speed: 0.40, obs: [[2.2, 1.0], [4.4, 1.0]] },
+    { speed: 0.52, obs: [[1.2, 0.85], [2.4, 1.15], [3.6, 0.9], [4.8, 1.1]] },
+    { speed: 0.64, obs: [[0.9, 1.1], [1.6, 0.85], [2.4, 1.15], [3.2, 0.85], [4.0, 1.15], [5.0, 0.9]] }
+  ];
   const OUT = { rx: 140, ry: 76 }, INN = { rx: 78, ry: 30 }, MID = { rx: 109, ry: 53 };
   const hudLap = document.getElementById('gLap');
   const hudTime = document.getElementById('gTime');
   const hudBest = document.getElementById('gBest');
   const keys = {};
-  let mode = 'idle';
-  let me, rival, time, count, best = null, msg = '', raf = 0, last = 0;
+  let mode = 'idle'; // idle | countdown | racing | finished
+  let me, rival, time, count, msg = '', raf = 0, last = 0;
+  let level = 0, obstacles = [];
+  const bests = [null, null, null];
 
   function resetRace() {
     const th0 = Math.atan2(8, MID.rx);
     me = { x: CX + MID.rx, y: CY + 8, a: -Math.PI / 2, v: 0, prog: -th0, prevTh: th0 };
-    rival = { prog: -th0 };
+    rival = { prog: -th0, stun: 0 };
+    obstacles = LEVELS[level].obs.map(([th, k]) => ({
+      x: CX + MID.rx * k * Math.cos(th),
+      y: CY + MID.ry * k * Math.sin(th)
+    }));
     time = 0;
     count = 3;
   }
 
-  const level = (r, x, y) => ((x - CX) / r.rx) ** 2 + ((y - CY) / r.ry) ** 2;
-  const onTrack = (x, y) => level(OUT, x, y) <= 1 && level(INN, x, y) >= 1;
+  const ell = (r, x, y) => ((x - CX) / r.rx) ** 2 + ((y - CY) / r.ry) ** 2;
+  const onTrack = (x, y) => ell(OUT, x, y) <= 1 && ell(INN, x, y) >= 1;
 
   function rivalPose() {
     const th = -rival.prog, k = 0.92;
@@ -157,13 +191,13 @@
     const lap = Math.min(LAPS, Math.max(0, Math.floor(me.prog / TAU)) + 1);
     hudLap.textContent = lap + '/' + LAPS;
     hudTime.textContent = time.toFixed(1);
-    hudBest.textContent = best === null ? '--' : best.toFixed(1) + 's';
+    hudBest.textContent = bests[level] === null ? '--' : bests[level].toFixed(1) + 's';
   }
 
   function finish(won) {
     mode = 'finished';
     msg = won ? 'VITORIA!' : 'RIVAL VENCEU!';
-    if (won && (best === null || time < best)) best = time;
+    if (won && (bests[level] === null || time < bests[level])) bests[level] = time;
   }
 
   function update(dt) {
@@ -188,13 +222,30 @@
     me.x = Math.min(W - 6, Math.max(6, me.x + Math.cos(me.a) * me.v * dt));
     me.y = Math.min(H - 6, Math.max(6, me.y + Math.sin(me.a) * me.v * dt));
 
+    // Colisão com obstáculos: perde velocidade e é empurrado para fora
+    for (const o of obstacles) {
+      const dx = me.x - o.x, dy = me.y - o.y, dist = Math.hypot(dx, dy);
+      if (dist < 9) {
+        me.v *= 0.3;
+        const n = dist || 1;
+        me.x += (dx / n) * (9.5 - dist);
+        me.y += (dy / n) * (9.5 - dist);
+      }
+    }
+
+    // Progresso: soma o ângulo percorrido ao redor do centro da pista
     const th = Math.atan2(me.y - CY, me.x - CX);
     let d = th - me.prevTh;
     if (d > Math.PI) d -= TAU;
     if (d < -Math.PI) d += TAU;
     me.prog -= d;
     me.prevTh = th;
-    rival.prog += RIVAL_SPEED * dt;
+
+    // Rival: velocidade do nível; esbarrar em obstáculo o atrasa
+    const rp = rivalPose();
+    const near = obstacles.some((o) => Math.hypot(rp.x - o.x, rp.y - o.y) < 9);
+    rival.stun = near ? 0.5 : Math.max(0, rival.stun - dt);
+    rival.prog += LEVELS[level].speed * (rival.stun > 0 ? 0.45 : 1) * dt;
 
     updateHud();
     if (me.prog >= LAPS * TAU) finish(true);
@@ -258,6 +309,13 @@
       ctx.fillRect(CX + INN.rx + i * 8, CY, 8, 4);
     }
 
+    for (const o of obstacles) {
+      const ox = Math.round(o.x), oy = Math.round(o.y);
+      ctx.fillStyle = '#3b3a4a'; ctx.fillRect(ox - 5, oy - 5, 10, 10);
+      ctx.fillStyle = '#e8a35c'; ctx.fillRect(ox - 4, oy - 4, 8, 8);
+      ctx.fillStyle = '#fbf5e6'; ctx.fillRect(ox - 4, oy - 1, 8, 2);
+    }
+
     const r = rivalPose();
     drawKart(r.x, r.y, r.a, '#6f9fc8');
     drawKart(me.x, me.y, me.a, '#d9776b');
@@ -303,5 +361,5 @@
   document.addEventListener('keyup', (event) => { keys[event.key.toLowerCase()] = false; });
   window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
-  stopRace();
+  stopRace(); // desenha o quadro inicial
 })();
