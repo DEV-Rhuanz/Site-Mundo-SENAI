@@ -143,14 +143,16 @@ body.panel-closed .demo-area { margin-right: 44px; }
     image-rendering: pixelated;
   }
 
-  & .buttons-section {
+  & .buttons-section,
+  & .game-section {
     padding: 32px;
     margin-bottom: 32px;
     background: var(--cream);
     border: 4px solid var(--ink);
     box-shadow: 6px 6px 0 var(--ink);
   }
-  & .buttons-section h2 { margin: 0 0 16px; font-size: 16px; }
+  & .buttons-section h2,
+  & .game-section h2 { margin: 0 0 16px; font-size: 16px; }
   & .btn-grid { display: flex; flex-wrap: wrap; gap: 20px; padding: 12px 8px; }
 
   & .btn {
@@ -175,6 +177,19 @@ body.panel-closed .demo-area { margin-right: 44px; }
   & .btn.is-big { transform: scale(1.25); }
   & .btn.is-shape { border-radius: 24px; border-style: dashed; }
   & .btn.is-shaking { animation: pixel-shake .3s steps(2) infinite; }
+
+  & .game-canvas {
+    display: block;
+    width: 100%;
+    max-width: 640px;
+    aspect-ratio: 16 / 9;
+    margin: 16px 0;
+    image-rendering: pixelated;
+    background: #93c48d;
+    border: 4px solid var(--ink);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  & .hud { margin: 0 0 16px; font-family: 'Press Start 2P', monospace; font-size: 10px; line-height: 1.8; }
 
   & .site-footer { padding: 16px; text-align: center; font-size: 16px; }
 

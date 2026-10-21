@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nintendo Pixel</title> 
+  <title>Nintendo Pixel</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -26,6 +26,7 @@
           <ul class="nav">
             <li><a href="#inicio">Início</a></li>
             <li><a href="#botoes">Botões</a></li>
+            <li><a href="#corrida">Corrida</a></li>
             <li><a href="#contato">Contato</a></li>
           </ul>
         </nav>
@@ -51,6 +52,13 @@
             <button class="btn" type="button" data-action="hover" data-default="4. PASSE AQUI" data-hover="OPA! ME PEGOU!">4. PASSE AQUI</button>
             <button class="btn" type="button" data-action="modal">5. ABRIR POPUP</button>
           </div>
+        </section>
+        <section class="game-section" id="corrida">
+          <h2>Mini corrida</h2>
+          <p>Dê 3 voltas antes do kart azul. Use as setas (ou W A S D) para dirigir. Sair da pista faz você perder velocidade!</p>
+          <canvas class="game-canvas" id="raceCanvas" width="320" height="180" aria-label="Jogo de corrida"></canvas>
+          <p class="hud">VOLTA <span id="gLap">1/3</span> &middot; TEMPO <span id="gTime">0.0</span>s &middot; MELHOR <span id="gBest">--</span></p>
+          <button class="btn cta" type="button" data-action="race-start">INICIAR CORRIDA</button>
         </section>
       </main>
       <footer class="site-footer" id="contato">

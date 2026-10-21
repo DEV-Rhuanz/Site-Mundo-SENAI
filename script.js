@@ -51,6 +51,10 @@
     if (key === 'js' && !state.js) {
       resetHover();
     }
+
+    if ((key === 'html' && !state.html) || (key === 'js' && !state.js)) {
+      stopRace();
+    }
   }
 
   document.querySelectorAll('.switch').forEach((btn) => {
@@ -61,6 +65,7 @@
       applyLayer(key);
     });
   });
+
   panelTab.addEventListener('click', () => {
     const collapsed = panel.classList.toggle('collapsed');
     document.body.classList.toggle('panel-closed', collapsed);
@@ -68,6 +73,7 @@
     panelTab.setAttribute('aria-expanded', String(!collapsed));
     panelTab.setAttribute('aria-label', collapsed ? 'Expandir painel' : 'Recolher painel');
   });
+
   demo.addEventListener('click', (event) => {
     if (!state.js) return;
 
@@ -92,6 +98,9 @@
       case 'modal':
         modal.hidden = false;
         break;
+      case 'race-start':
+        startRace();
+        break;
       case 'buy':
         buyModal.hidden = false;
         break;
@@ -100,13 +109,199 @@
         break;
     }
   });
+
   hoverBtn.addEventListener('mouseenter', () => {
     if (!state.js) return;
     hoverBtn.textContent = hoverBtn.dataset.hover;
     hoverBtn.classList.add('is-shaking');
   });
   hoverBtn.addEventListener('mouseleave', resetHover);
+
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && state.js) closeModal();
   });
+
+  const cv = document.getElementById('raceCanvas');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const CX = 160, CY = 92, TAU = Math.PI * 2, LAPS = 3, RIVAL_SPEED = 0.55;
+  const OUT = { rx: 140, ry: 76 }, INN = { rx: 78, ry: 30 }, MID = { rx: 109, ry: 53 };
+  const hudLap = document.getElementById('gLap');
+  const hudTime = document.getElementById('gTime');
+  const hudBest = document.getElementById('gBest');
+  const keys = {};
+  let mode = 'idle';
+  let me, rival, time, count, best = null, msg = '', raf = 0, last = 0;
+
+  function resetRace() {
+    const th0 = Math.atan2(8, MID.rx);
+    me = { x: CX + MID.rx, y: CY + 8, a: -Math.PI / 2, v: 0, prog: -th0, prevTh: th0 };
+    rival = { prog: -th0 };
+    time = 0;
+    count = 3;
+  }
+
+  const level = (r, x, y) => ((x - CX) / r.rx) ** 2 + ((y - CY) / r.ry) ** 2;
+  const onTrack = (x, y) => level(OUT, x, y) <= 1 && level(INN, x, y) >= 1;
+
+  function rivalPose() {
+    const th = -rival.prog, k = 0.92;
+    return {
+      x: CX + MID.rx * k * Math.cos(th),
+      y: CY + MID.ry * k * Math.sin(th),
+      a: Math.atan2(-MID.ry * Math.cos(th), MID.rx * Math.sin(th))
+    };
+  }
+
+  function updateHud() {
+    const lap = Math.min(LAPS, Math.max(0, Math.floor(me.prog / TAU)) + 1);
+    hudLap.textContent = lap + '/' + LAPS;
+    hudTime.textContent = time.toFixed(1);
+    hudBest.textContent = best === null ? '--' : best.toFixed(1) + 's';
+  }
+
+  function finish(won) {
+    mode = 'finished';
+    msg = won ? 'VITORIA!' : 'RIVAL VENCEU!';
+    if (won && (best === null || time < best)) best = time;
+  }
+
+  function update(dt) {
+    if (mode === 'countdown') {
+      count -= dt;
+      if (count <= 0) mode = 'racing';
+      return;
+    }
+    time += dt;
+    const up = keys.arrowup || keys.w, down = keys.arrowdown || keys.s;
+    const left = keys.arrowleft || keys.a, right = keys.arrowright || keys.d;
+    const maxV = onTrack(me.x, me.y) ? 70 : 24;
+
+    if (up) me.v += 90 * dt;
+    else if (down) me.v -= 110 * dt;
+    else me.v -= Math.sign(me.v) * Math.min(Math.abs(me.v), 40 * dt);
+    if (me.v > maxV) me.v = Math.max(maxV, me.v - 160 * dt);
+    me.v = Math.max(-25, me.v);
+
+    const steer = (right ? 1 : 0) - (left ? 1 : 0);
+    me.a += steer * 2.6 * dt * Math.max(-1, Math.min(1, me.v / 30));
+    me.x = Math.min(W - 6, Math.max(6, me.x + Math.cos(me.a) * me.v * dt));
+    me.y = Math.min(H - 6, Math.max(6, me.y + Math.sin(me.a) * me.v * dt));
+
+    const th = Math.atan2(me.y - CY, me.x - CX);
+    let d = th - me.prevTh;
+    if (d > Math.PI) d -= TAU;
+    if (d < -Math.PI) d += TAU;
+    me.prog -= d;
+    me.prevTh = th;
+    rival.prog += RIVAL_SPEED * dt;
+
+    updateHud();
+    if (me.prog >= LAPS * TAU) finish(true);
+    else if (rival.prog >= LAPS * TAU) finish(false);
+  }
+
+  function ellipsePath(r) {
+    ctx.beginPath();
+    ctx.ellipse(CX, CY, r.rx, r.ry, 0, 0, TAU);
+  }
+
+  function curb(r) {
+    ctx.lineWidth = 3;
+    ctx.setLineDash([6, 6]);
+    ctx.strokeStyle = '#d9776b';
+    ellipsePath(r); ctx.stroke();
+    ctx.lineDashOffset = 6;
+    ctx.strokeStyle = '#fff';
+    ellipsePath(r); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.lineDashOffset = 0;
+  }
+
+  function drawKart(x, y, a, color) {
+    ctx.save();
+    ctx.translate(Math.round(x), Math.round(y));
+    ctx.rotate(a);
+    ctx.fillStyle = '#3b3a4a';
+    ctx.fillRect(-6, -5, 4, 3); ctx.fillRect(-6, 2, 4, 3);
+    ctx.fillRect(3, -5, 4, 3); ctx.fillRect(3, 2, 4, 3);
+    ctx.fillStyle = color;
+    ctx.fillRect(-5, -3, 11, 6);
+    ctx.fillStyle = '#fbf5e6';
+    ctx.fillRect(0, -2, 3, 4);
+    ctx.restore();
+  }
+
+  function banner(text) {
+    ctx.fillStyle = 'rgba(59, 58, 74, .7)';
+    ctx.fillRect(0, 64, W, 52);
+    ctx.fillStyle = '#fbf5e6';
+    ctx.font = "12px 'Press Start 2P', monospace";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, CX, 90);
+  }
+
+  function draw() {
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = '#93c48d';
+    ctx.fillRect(0, 0, W, H);
+    ellipsePath(OUT); ctx.fillStyle = '#b9b2a1'; ctx.fill();
+    ellipsePath(INN); ctx.fillStyle = '#93c48d'; ctx.fill();
+    curb(OUT); curb(INN);
+
+    // Linha de largada quadriculada
+    for (let i = 0; i < 8; i++) {
+      ctx.fillStyle = i % 2 ? '#3b3a4a' : '#fff';
+      ctx.fillRect(CX + INN.rx + i * 8, CY - 4, 8, 4);
+      ctx.fillStyle = i % 2 ? '#fff' : '#3b3a4a';
+      ctx.fillRect(CX + INN.rx + i * 8, CY, 8, 4);
+    }
+
+    const r = rivalPose();
+    drawKart(r.x, r.y, r.a, '#6f9fc8');
+    drawKart(me.x, me.y, me.a, '#d9776b');
+
+    if (mode === 'idle') banner('APERTE INICIAR');
+    if (mode === 'countdown') banner(String(Math.ceil(count)));
+    if (mode === 'finished') banner(msg);
+  }
+
+  function frame(t) {
+    const dt = Math.min(0.05, (t - last) / 1000 || 0);
+    last = t;
+    update(dt);
+    draw();
+    if (mode === 'countdown' || mode === 'racing') raf = requestAnimationFrame(frame);
+  }
+
+  function startRace() {
+    cancelAnimationFrame(raf);
+    resetRace();
+    mode = 'countdown';
+    last = performance.now();
+    raf = requestAnimationFrame(frame);
+  }
+
+  function stopRace() {
+    cancelAnimationFrame(raf);
+    mode = 'idle';
+    resetRace();
+    updateHud();
+    draw();
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (!state.js) return;
+    const k = event.key.toLowerCase();
+    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k) &&
+        (mode === 'countdown' || mode === 'racing')) {
+      event.preventDefault();
+    }
+    keys[k] = true;
+  });
+  document.addEventListener('keyup', (event) => { keys[event.key.toLowerCase()] = false; });
+  window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+
+  stopRace();
 })();
