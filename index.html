@@ -10,8 +10,6 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <!-- ÁREA DE DEMONSTRAÇÃO (lado esquerdo) -->
   <div class="demo-area">
     <div class="demo-container styled" id="demo">
 
@@ -24,7 +22,6 @@
           <figure class="logo-box" role="img" aria-label="Logo Mundo SENAI" data-label="LOGO MUNDO SENAI">
             <img src="assets/Mundo_Senai_Pixel.png" alt="">
           </figure>
-
         </div>
         <nav>
           <ul class="nav">
@@ -34,7 +31,6 @@
           </ul>
         </nav>
       </header>
-
       <main>
         <section class="hero" id="inicio">
           <div class="hero-text">
@@ -46,7 +42,6 @@
             <img src="assets/Nintendo_280x220.png" alt="">
           </figure>
         </section>
-
         <section class="buttons-section" id="botoes">
           <h2>Teste os botões</h2>
           <p>Cada botão abaixo é controlado por JavaScript. Use o painel à direita para ligar e desligar as camadas da página.</p>
@@ -59,12 +54,9 @@
           </div>
         </section>
       </main>
-
       <footer class="site-footer" id="contato">
         <p>Pixel-Boy 16 &middot; Projeto educacional &middot; Feito com HTML, CSS e JavaScript</p>
       </footer>
-
-      <!-- Pop-up de compra (botão "Quero o meu!") -->
       <div class="modal" id="buyModal" hidden>
         <div class="modal-box buy-box" role="dialog" aria-modal="true" aria-labelledby="buyTitle">
           <figure class="pixel-frame ad-frame" role="img" aria-label="Imagem do anúncio" data-label="IMAGEM DO ANÚNCIO">
@@ -76,8 +68,6 @@
           <button class="btn" type="button" data-action="close">CONTINUAR</button>
         </div>
       </div>
-
-      <!-- Modal pixelado -->
       <div class="modal" id="modal" hidden>
         <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
           <h3 id="modalTitle">NOVA FASE!</h3>
@@ -85,30 +75,24 @@
           <button class="btn" type="button" data-action="close">FECHAR</button>
         </div>
       </div>
-
     </div>
   </div>
-
-  <!-- PAINEL DE CONTROLE (lado direito, isolado da demonstração) -->
   <aside class="panel" id="panel" aria-label="Painel de controle">
     <button class="panel-tab" id="panelTab" type="button" aria-expanded="true" aria-controls="panel" aria-label="Recolher painel">&#9654;</button>
     <h2 class="panel-title">CONTROLES</h2>
     <p class="panel-hint">Ligue e desligue cada tecnologia e veja o que acontece com a página.</p>
-
     <div class="switch-row">
       <span class="switch-label">HTML</span>
       <button class="switch on" type="button" role="switch" aria-checked="true" data-toggle="html">
         <span class="switch-text">LIGADO</span><span class="knob"></span>
       </button>
     </div>
-
     <div class="switch-row">
       <span class="switch-label">CSS</span>
       <button class="switch on" type="button" role="switch" aria-checked="true" data-toggle="css">
         <span class="switch-text">LIGADO</span><span class="knob"></span>
       </button>
     </div>
-
     <div class="switch-row">
       <span class="switch-label">JAVASCRIPT</span>
       <button class="switch on" type="button" role="switch" aria-checked="true" data-toggle="js">
@@ -116,7 +100,6 @@
       </button>
     </div>
   </aside>
-
   <script src="script.js"></script>
 </body>
 </html>

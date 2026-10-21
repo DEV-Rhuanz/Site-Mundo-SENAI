@@ -9,14 +9,10 @@
   const panelTab = document.getElementById('panelTab');
   const hoverBtn = demo.querySelector('[data-action="hover"]');
 
-  // Estado das três "camadas" da página
   const state = { html: true, css: true, js: true };
 
-  // Guarda os nós removidos quando o HTML é desativado
-  // (mover os nós preserva os eventos ao reativar)
   let stash = null;
 
-  /* ---------- Utilidades ---------- */
   function closeModal() {
     modals.forEach((m) => { m.hidden = true; });
   }
@@ -33,7 +29,6 @@
     btn.querySelector('.switch-text').textContent = isOn ? 'LIGADO' : 'DESLIGADO';
   }
 
-  /* ---------- Painel de controle: toggles ---------- */
   function applyLayer(key) {
     closeModal();
 
@@ -49,7 +44,6 @@
     }
 
     if (key === 'css') {
-      // Remove só a classe da demo: o painel continua estilizado
       demo.classList.toggle('styled', state.css);
       document.body.classList.toggle('demo-raw', !state.css);
     }
@@ -67,8 +61,6 @@
       applyLayer(key);
     });
   });
-
-  /* ---------- Painel de controle: recolher/expandir ---------- */
   panelTab.addEventListener('click', () => {
     const collapsed = panel.classList.toggle('collapsed');
     document.body.classList.toggle('panel-closed', collapsed);
@@ -76,11 +68,8 @@
     panelTab.setAttribute('aria-expanded', String(!collapsed));
     panelTab.setAttribute('aria-label', collapsed ? 'Expandir painel' : 'Recolher painel');
   });
-
-  /* ---------- Interações da demonstração ---------- */
-  // Delegação de eventos: funciona mesmo depois de remover/recolocar o HTML
   demo.addEventListener('click', (event) => {
-    if (!state.js) return; // JavaScript desativado: nada acontece
+    if (!state.js) return;
 
     if (modals.includes(event.target)) {
       closeModal();
@@ -111,16 +100,12 @@
         break;
     }
   });
-
-  // Botão 4: hover dinâmico (troca o texto e treme levemente)
   hoverBtn.addEventListener('mouseenter', () => {
     if (!state.js) return;
     hoverBtn.textContent = hoverBtn.dataset.hover;
     hoverBtn.classList.add('is-shaking');
   });
   hoverBtn.addEventListener('mouseleave', resetHover);
-
-  // Esc fecha o popup
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && state.js) closeModal();
   });
