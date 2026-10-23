@@ -149,9 +149,9 @@
   const CX = 160, CY = 92, TAU = Math.PI * 2, LAPS = 3;
   // Dificuldades: velocidade do rival (rad/s) e obstáculos [ângulo, faixa]
   const LEVELS = [
-    { speed: 5.00, obs: [[2.2, 1.0], [4.4, 1.0]] },
-    { speed: 8.00, obs: [[1.2, 0.85], [2.4, 1.15], [3.6, 0.9], [4.8, 1.1]] },
-    { speed: 10.00, obs: [[0.9, 1.1], [1.6, 0.85], [2.4, 1.15], [3.2, 0.85], [4.0, 1.15], [5.0, 0.9]] }
+    { speed: 0.70, obs: [[2.2, 1.0], [4.4, 1.0]] },
+    { speed: 0.85, obs: [[1.2, 0.85], [2.4, 1.15], [3.6, 0.9], [4.8, 1.1]] },
+    { speed: 1.30, obs: [[0.9, 1.1], [1.6, 0.85], [2.4, 1.15], [3.2, 0.85], [4.0, 1.15], [5.0, 0.9]] }
   ];
   const OUT = { rx: 140, ry: 76 }, INN = { rx: 78, ry: 30 }, MID = { rx: 109, ry: 53 };
   const hudLap = document.getElementById('gLap');
